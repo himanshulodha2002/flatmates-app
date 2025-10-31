@@ -199,6 +199,57 @@ eas submit --platform ios
 
 For more build options, refer to [EAS Build Documentation](https://docs.expo.dev/build/introduction/).
 
+## 🔐 Google OAuth Configuration
+
+The app uses Google Sign-In for authentication. Follow these steps to configure it:
+
+### 1. Prerequisites
+
+You need to have a Google Cloud Project with OAuth 2.0 credentials configured. If you haven't done this yet, see the backend README for detailed instructions on setting up Google Cloud Console.
+
+### 2. Get Web Client ID
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Navigate to **APIs & Services** → **Credentials**
+3. Find your OAuth 2.0 Client ID for **Web application**
+4. Copy the **Client ID** (it should end with `.apps.googleusercontent.com`)
+
+**Important:** You need the **Web Client ID**, not the Android or iOS client ID. The `@react-native-google-signin/google-signin` library uses the web client ID for React Native apps.
+
+### 3. Configure Environment Variables
+
+Create or update `.env.development` file in the mobile directory:
+
+```env
+EXPO_PUBLIC_API_URL=http://localhost:8000/api/v1
+EXPO_PUBLIC_ENVIRONMENT=development
+EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
+```
+
+For physical device testing, replace `localhost` with your computer's local IP address:
+```env
+EXPO_PUBLIC_API_URL=http://192.168.1.100:8000/api/v1
+```
+
+### 4. Authentication Flow
+
+1. User taps "Sign in with Google" button on the login screen
+2. Google Sign-In opens and user authenticates
+3. App receives Google ID token
+4. App sends ID token to backend at `/api/v1/auth/google/mobile`
+5. Backend verifies token with Google and creates/updates user
+6. Backend returns JWT access token
+7. App stores token and user data in Redux (persisted to AsyncStorage)
+8. User is redirected to the main app
+
+### 5. Protected Routes
+
+The app automatically handles authentication:
+- Unauthenticated users are redirected to `/login`
+- Authenticated users can access all tab screens
+- JWT token is included in all API requests via Authorization header
+- Token persists across app restarts
+
 ## Connecting to Backend API
 
 The app is configured to connect to a backend API. By default, it uses:
@@ -211,6 +262,7 @@ To change the API URL:
 1. Create a `.env` file in the mobile directory:
    ```
    EXPO_PUBLIC_API_URL=https://your-api-url.com/api/v1
+   EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
    ```
 
 2. The API service (`src/store/services/api.ts`) will automatically use this URL.
@@ -378,9 +430,25 @@ For issues and questions:
 - Check the [React Native Paper documentation](https://callstack.github.io/react-native-paper/)
 - Review the project's GitHub issues
 
+## Authentication Screens
+
+The app includes the following authentication screens:
+
+### Login Screen (`/login`)
+- Google Sign-In button with Material Design 3 styling
+- App title and description
+- Error handling for failed authentication
+- Loading state during sign-in process
+
+### Profile Screen (`/(tabs)/profile`)
+- User avatar (from Google profile picture)
+- User name and email
+- Account information (status, member since)
+- Logout button with confirmation dialog
+
 ## Next Steps
 
-- [ ] Implement authentication screens
+- [x] Implement authentication screens
 - [ ] Add real-time WebSocket support
 - [ ] Implement todo list management
 - [ ] Add shopping list features
