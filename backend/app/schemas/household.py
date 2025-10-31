@@ -4,7 +4,7 @@ Pydantic schemas for household management.
 from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 
 from app.models.household import MemberRole, InviteStatus
 
@@ -66,7 +66,7 @@ class MemberRoleUpdate(BaseModel):
 # Invite schemas
 class InviteCreate(BaseModel):
     """Schema for creating an invite."""
-    email: EmailStr
+    email: str
 
 
 class InviteResponse(BaseModel):
