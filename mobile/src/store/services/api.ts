@@ -2,6 +2,8 @@ import { createApi, fetchBaseQuery, retry } from '@reduxjs/toolkit/query/react';
 import type { RootState } from '../index';
 
 // Base URL - can be configured via environment variable
+// For physical devices, set EXPO_PUBLIC_API_URL to your computer's local IP
+// Example: EXPO_PUBLIC_API_URL=http://192.168.1.100:8000/api/v1
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 // Create a base query with auth token injection
