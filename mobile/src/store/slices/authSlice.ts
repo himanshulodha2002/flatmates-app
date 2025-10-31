@@ -18,6 +18,12 @@ const authSlice = createSlice({
       state.isAuthenticated = true;
       state.loading = false;
     },
+    clearCredentials: (state) => {
+      state.user = null;
+      state.token = null;
+      state.isAuthenticated = false;
+      state.loading = false;
+    },
     logout: (state) => {
       state.user = null;
       state.token = null;
@@ -35,5 +41,12 @@ const authSlice = createSlice({
   },
 });
 
-export const { setCredentials, logout, setLoading, updateUser } = authSlice.actions;
+export const { setCredentials, clearCredentials, logout, setLoading, updateUser } = authSlice.actions;
+
+// Selectors
+export const selectCurrentUser = (state: { auth: AuthState }) => state.auth.user;
+export const selectIsAuthenticated = (state: { auth: AuthState }) => state.auth.isAuthenticated;
+export const selectAuthToken = (state: { auth: AuthState }) => state.auth.token;
+export const selectAuthLoading = (state: { auth: AuthState }) => state.auth.loading;
+
 export default authSlice.reducer;

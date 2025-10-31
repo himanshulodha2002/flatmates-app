@@ -14,6 +14,8 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 # Import Base and models for autogenerate support
 from app.db.base import Base
 from app.core.config import settings
+# Import all models for alembic autogenerate
+from app.models.user import User  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

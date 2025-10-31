@@ -81,3 +81,25 @@ def decode_access_token(token: str) -> Optional[Dict[str, Any]]:
         return payload
     except JWTError:
         return None
+
+
+def verify_token(token: str) -> Dict[str, Any]:
+    """
+    Verify a JWT token and return the payload.
+    
+    Args:
+        token: JWT token string to verify
+        
+    Returns:
+        Decoded token payload
+        
+    Raises:
+        JWTError: If token is invalid or expired
+    """
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        if payload.get("sub") is None:
+            raise JWTError("Token missing subject")
+        return payload
+    except JWTError as e:
+        raise JWTError(f"Invalid token: {str(e)}")

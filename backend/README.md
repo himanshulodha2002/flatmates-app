@@ -47,14 +47,19 @@ Edit `.env` and update the values:
 DATABASE_URL=postgresql://user:password@localhost:5432/flatmates_db
 SECRET_KEY=your-secret-key-here-generate-a-secure-random-string
 ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
+ACCESS_TOKEN_EXPIRE_MINUTES=10080
 BACKEND_CORS_ORIGINS=["http://localhost:3000","http://localhost:8081","exp://192.168.1.1:8081"]
+
+# Google OAuth Configuration
+GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-google-client-secret
 ```
 
 **Important:** 
 - Replace `user`, `password`, and database name in `DATABASE_URL` with your PostgreSQL credentials
 - Generate a secure `SECRET_KEY` (you can use: `openssl rand -hex 32`)
 - Update `BACKEND_CORS_ORIGINS` with your frontend URLs
+- Configure Google OAuth credentials (see Google OAuth Setup section below)
 
 ### 4. Set Up PostgreSQL Database
 
@@ -203,6 +208,7 @@ pytest --cov=app --cov-report=html
 
 # Run specific test file
 pytest tests/test_health.py
+pytest tests/test_auth_endpoints.py
 
 # Run tests with markers
 pytest -m unit
@@ -275,14 +281,81 @@ FastAPI automatically generates interactive API documentation:
   - Alternative documentation interface
   - Better for reading/printing
 
-## 🔐 Security
+## 🔐 Authentication & Security
+
+### Google OAuth 2.0 Setup
+
+The backend uses Google OAuth 2.0 for user authentication. Follow these steps to configure it:
+
+#### 1. Create a Google Cloud Project
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select an existing one
+3. Enable the Google+ API for your project
+
+#### 2. Configure OAuth Consent Screen
+
+1. Navigate to **APIs & Services** → **OAuth consent screen**
+2. Choose **External** user type
+3. Fill in the required information:
+   - App name: "Flatmates App"
+   - User support email: Your email
+   - Developer contact email: Your email
+4. Add scopes:
+   - `userinfo.email`
+   - `userinfo.profile`
+5. Save and continue
+
+#### 3. Create OAuth 2.0 Credentials
+
+1. Navigate to **APIs & Services** → **Credentials**
+2. Click **Create Credentials** → **OAuth 2.0 Client ID**
+3. Select **Web application** as the application type
+4. Add authorized redirect URIs (if needed for web)
+5. Click **Create**
+6. Copy the **Client ID** and **Client Secret**
+7. Update your `.env` file:
+   ```env
+   GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=your-client-secret
+   ```
+
+#### 4. Authentication Endpoints
+
+The backend provides the following authentication endpoints:
+
+- **POST `/api/v1/auth/google/mobile`**: Authenticate with Google ID token
+  - Request body: `{ "id_token": "google-id-token" }`
+  - Returns: JWT access token and user information
+  
+- **GET `/api/v1/auth/me`**: Get current user information
+  - Requires: Bearer token in Authorization header
+  - Returns: User profile data
+  
+- **POST `/api/v1/auth/logout`**: Logout (validates token)
+  - Requires: Bearer token in Authorization header
+  - Returns: Success message
+
+#### 5. JWT Token Configuration
+
+- Tokens expire after **7 days** (10080 minutes) by default
+- Tokens are signed using the `SECRET_KEY` from environment variables
+- Algorithm: HS256
+
+### Security Best Practices
 
 - Passwords are hashed using bcrypt (via passlib)
-- JWT tokens for authentication (implementation ready in `core/security.py`)
+- JWT tokens for authentication with 7-day expiration
+- Google OAuth 2.0 for secure authentication
 - CORS configured for mobile app access
 - Environment variables for sensitive data
+- User data includes email, name, and Google profile picture
 
-**Remember:** Never commit `.env` file or expose your `SECRET_KEY`
+**Remember:** 
+- Never commit `.env` file or expose your `SECRET_KEY`
+- Keep your Google OAuth credentials secure
+- Use HTTPS in production
+- Rotate your `SECRET_KEY` periodically
 
 ## 🐛 Troubleshooting
 
