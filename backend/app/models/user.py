@@ -6,6 +6,7 @@ from datetime import datetime
 from sqlalchemy import Column, String, Boolean, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.types import TypeDecorator, CHAR
+from sqlalchemy.orm import relationship
 
 from app.models.base import Base
 
@@ -58,6 +59,10 @@ class User(Base):
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Relationships (using strings to avoid circular imports)
+    owned_households = relationship("Household", foreign_keys="Household.owner_id", back_populates="owner")
+    households = relationship("Household", secondary="household_members", back_populates="members")
 
     def __repr__(self):
         return f"<User(id={self.id}, email={self.email})>"
