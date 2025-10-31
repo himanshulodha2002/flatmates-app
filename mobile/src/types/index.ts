@@ -1,8 +1,12 @@
 export interface User {
   id: string;
   email: string;
-  name: string;
-  createdAt?: string;
+  full_name: string;
+  google_id: string;
+  profile_picture_url?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface AuthState {

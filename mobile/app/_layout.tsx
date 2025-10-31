@@ -56,10 +56,30 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
+  const { useRouter, useSegments } = require('expo-router');
+  const router = useRouter();
+  const segments = useSegments();
+  const { useSelector } = require('react-redux');
+  const { selectIsAuthenticated } = require('../src/store/slices/authSlice');
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+
+  useEffect(() => {
+    const inAuthGroup = segments[0] === '(tabs)';
+
+    if (!isAuthenticated && inAuthGroup) {
+      // Redirect to login if not authenticated and trying to access protected routes
+      router.replace('/login');
+    } else if (isAuthenticated && !inAuthGroup) {
+      // Redirect to tabs if authenticated and on login screen
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated, segments]);
+
   return (
     <PaperProvider theme={theme}>
       <ThemeProvider value={DarkTheme}>
         <Stack>
+          <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         </Stack>
       </ThemeProvider>
