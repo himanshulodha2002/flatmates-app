@@ -31,3 +31,51 @@ export interface ApiError {
   message: string;
   statusCode?: number;
 }
+
+// Shopping types
+export interface ShoppingItem {
+  id: string;
+  list_id: string;
+  name: string;
+  quantity?: string;
+  category?: string;
+  is_purchased: boolean;
+  purchased_by?: string;
+  purchased_at?: string;
+}
+
+export interface ShoppingList {
+  id: string;
+  household_id: string;
+  name: string;
+  created_by: string;
+  created_at: string;
+  items: ShoppingItem[];
+}
+
+export interface ShoppingListSummary {
+  id: string;
+  household_id: string;
+  name: string;
+  created_by: string;
+  created_at: string;
+  item_count: number;
+  purchased_count: number;
+}
+
+export interface CreateShoppingListRequest {
+  name: string;
+}
+
+export interface CreateShoppingItemRequest {
+  name: string;
+  quantity?: string;
+  category?: string;
+}
+
+export interface UpdateShoppingItemRequest {
+  name?: string;
+  quantity?: string;
+  category?: string;
+  is_purchased?: boolean;
+}
