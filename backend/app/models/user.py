@@ -3,9 +3,10 @@ User model for authentication.
 """
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, Boolean, DateTime
+from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.types import TypeDecorator, CHAR
+from sqlalchemy.orm import relationship
 
 from app.models.base import Base
 
@@ -56,8 +57,12 @@ class User(Base):
     google_id = Column(String, unique=True, index=True, nullable=False)
     profile_picture_url = Column(String, nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
+    household_id = Column(GUID(), ForeignKey("households.id", ondelete="SET NULL"), nullable=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Relationships
+    household = relationship("Household", back_populates="members")
 
     def __repr__(self):
         return f"<User(id={self.id}, email={self.email})>"
