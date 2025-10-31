@@ -19,7 +19,8 @@ export default function TabLayout() {
           backgroundColor: theme.colors.surface,
         },
         headerTintColor: theme.colors.onSurface,
-      }}>
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{

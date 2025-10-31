@@ -111,18 +111,93 @@ mobile/
 - `npm run ios` - Run on iOS simulator/device (macOS only)
 - `npm run web` - Run in web browser
 
-## Building for Production
+## Testing
 
-### Android APK/AAB:
+### Run Tests
+
 ```bash
-npx expo build:android
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test:coverage
 ```
 
-Follow the prompts to configure your build. You'll need to provide:
-- Android package name (already configured: `com.flatmates.app`)
-- Keystore (can be generated automatically by Expo)
+### Linting and Type Checking
 
-For more build options, refer to [Expo Build Documentation](https://docs.expo.dev/build/setup/).
+```bash
+# Run ESLint
+npm run lint
+
+# Fix linting issues
+npm run lint:fix
+
+# TypeScript type checking
+npm run type-check
+
+# Format code with Prettier
+npm run format
+```
+
+## Building for Production
+
+### EAS Build Setup
+
+1. **Install EAS CLI**
+   ```bash
+   npm install -g eas-cli
+   ```
+
+2. **Login to Expo**
+   ```bash
+   eas login
+   ```
+
+3. **Configure EAS project**
+   ```bash
+   eas build:configure
+   ```
+
+### Build for Android
+
+```bash
+# Development build (APK)
+eas build --platform android --profile development
+
+# Preview build (APK for testing)
+eas build --platform android --profile preview
+
+# Production build
+eas build --platform android --profile production
+```
+
+### Build for iOS
+
+```bash
+# Development build
+eas build --platform ios --profile development
+
+# Preview build (simulator)
+eas build --platform ios --profile preview
+
+# Production build
+eas build --platform ios --profile production
+```
+
+### Submit to App Stores
+
+```bash
+# Submit to Google Play Store
+eas submit --platform android
+
+# Submit to Apple App Store
+eas submit --platform ios
+```
+
+For more build options, refer to [EAS Build Documentation](https://docs.expo.dev/build/introduction/).
 
 ## Connecting to Backend API
 
@@ -185,6 +260,46 @@ import { useHealthCheckQuery } from '@/store/services/api';
 
 // In your component
 const { data, error, isLoading } = useHealthCheckQuery();
+```
+
+## 🔄 CI/CD
+
+### GitHub Actions Workflow
+
+The mobile CI/CD pipeline (`..github/workflows/mobile-ci.yml`) runs automatically on:
+- Push to `main` or `develop` branches
+- Pull requests to `main` branch
+
+**Test Job:**
+- Sets up Node.js 18 with dependency caching
+- Installs dependencies
+- Runs ESLint for code quality
+- Runs TypeScript type checking
+- Runs Jest tests with coverage reporting
+- Uploads coverage to Codecov
+
+**Build Job:**
+- Triggers on push to main branch
+- Builds Android APK using EAS
+- Uploads build artifacts
+
+### Build Status
+
+![Mobile CI/CD](https://github.com/himanshulodha2002/flatmates-app/workflows/Mobile%20CI%2FCD/badge.svg)
+
+### Running CI Locally
+
+You can run the same checks locally before pushing:
+
+```bash
+# Linting
+npm run lint
+
+# Type checking
+npm run type-check
+
+# Run tests
+npm test
 ```
 
 ## Troubleshooting

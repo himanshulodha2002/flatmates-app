@@ -12,12 +12,12 @@ const baseQuery = fetchBaseQuery({
   prepareHeaders: (headers, { getState }) => {
     // Get token from Redux state
     const token = (getState() as RootState).auth.token;
-    
+
     // If we have a token, include it in the headers
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
     }
-    
+
     return headers;
   },
 });

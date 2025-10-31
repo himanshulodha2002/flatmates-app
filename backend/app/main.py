@@ -1,6 +1,7 @@
 """
 Main FastAPI application for Flatmates App.
 """
+
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -25,9 +26,9 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"✗ Database connection failed: {e}")
         print("Make sure PostgreSQL is running and DATABASE_URL is correct")
-    
+
     yield
-    
+
     # Shutdown: Clean up resources if needed
     print("Shutting down...")
 
@@ -40,7 +41,7 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Configure CORS
@@ -57,7 +58,7 @@ app.add_middleware(
 async def health_check(db: Session = Depends(get_db)):
     """
     Health check endpoint to verify API and database status.
-    
+
     Returns:
         JSON response with health status
     """
@@ -68,18 +69,15 @@ async def health_check(db: Session = Depends(get_db)):
     except Exception:
         # Don't expose internal error details in production
         db_status = "disconnected"
-    
-    return {
-        "status": "healthy",
-        "database": db_status
-    }
+
+    return {"status": "healthy", "database": db_status}
 
 
 @app.get("/")
 async def root():
     """
     Root endpoint with API information.
-    
+
     Returns:
         JSON response with API details
     """
@@ -87,7 +85,7 @@ async def root():
         "message": "Welcome to Flatmates App API",
         "version": "1.0.0",
         "docs": "/docs",
-        "health": "/health"
+        "health": "/health",
     }
 
 

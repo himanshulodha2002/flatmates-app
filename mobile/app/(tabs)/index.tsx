@@ -35,10 +35,8 @@ export default function HomeScreen() {
               Features
             </Text>
             <Text variant="bodyMedium" style={styles.cardText}>
-              • Shared Todo Lists{'\n'}
-              • Collaborative Shopping Lists{'\n'}
-              • Expense Tracking & Splitting{'\n'}
-              • Real-time Updates
+              • Shared Todo Lists{'\n'}• Collaborative Shopping Lists{'\n'}• Expense Tracking &
+              Splitting{'\n'}• Real-time Updates
             </Text>
           </Card.Content>
         </Card>
