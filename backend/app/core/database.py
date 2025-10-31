@@ -2,6 +2,7 @@
 Database configuration and session management.
 SQLAlchemy setup for PostgreSQL with async support.
 """
+
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -17,11 +18,7 @@ engine = create_engine(
 )
 
 # Create SessionLocal class for database sessions
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine
-)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Create Base class for declarative models
 Base = declarative_base()
@@ -30,12 +27,12 @@ Base = declarative_base()
 def get_db() -> Generator:
     """
     Dependency function to get database session.
-    
+
     Usage:
         @app.get("/items")
         def read_items(db: Session = Depends(get_db)):
             ...
-    
+
     Yields:
         Database session that automatically closes after use
     """

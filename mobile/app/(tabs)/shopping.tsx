@@ -28,8 +28,8 @@ export default function ShoppingScreen() {
         <Card style={styles.card}>
           <Card.Content>
             <Text variant="bodyLarge" style={styles.cardText}>
-              Create and share shopping lists with your flatmates. Never forget what you need to
-              buy and coordinate shopping trips efficiently.
+              Create and share shopping lists with your flatmates. Never forget what you need to buy
+              and coordinate shopping trips efficiently.
             </Text>
           </Card.Content>
         </Card>

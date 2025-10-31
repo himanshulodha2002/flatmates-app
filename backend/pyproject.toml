@@ -16,7 +16,7 @@ exclude = '''
   | build
   | dist
   | \.eggs
-  | *.egg-info
+  | .*\.egg-info
 )/
 '''
 

@@ -2,6 +2,7 @@
 API dependencies for FastAPI endpoints.
 Common dependencies used across multiple endpoints.
 """
+
 from typing import Generator
 from sqlalchemy.orm import Session
 

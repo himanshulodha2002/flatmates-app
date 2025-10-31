@@ -16,12 +16,11 @@ exclude =
     .pytest_cache,
     .coverage
 
-# Error codes to ignore
 ignore = 
-    E203,  # whitespace before ':'
-    E501,  # line too long (handled by black)
-    W503,  # line break before binary operator
-    W504,  # line break after binary operator
+    E203,
+    E501,
+    W503,
+    W504
 
 # Complexity
 max-complexity = 10

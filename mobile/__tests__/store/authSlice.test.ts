@@ -36,7 +36,7 @@ describe('Auth Slice', () => {
   });
 
   it('should have initial state', () => {
-    const state = store.getState();
+    const state = store.getState() as any;
     expect(state.auth).toEqual({
       user: null,
       token: null,
@@ -52,7 +52,7 @@ describe('Auth Slice', () => {
 
     store.dispatch({ type: 'auth/login', payload: loginPayload });
 
-    const state = store.getState();
+    const state = store.getState() as any;
     expect(state.auth.isAuthenticated).toBe(true);
     expect(state.auth.user).toEqual(loginPayload.user);
     expect(state.auth.token).toBe(loginPayload.token);
@@ -71,7 +71,7 @@ describe('Auth Slice', () => {
     // Then logout
     store.dispatch({ type: 'auth/logout' });
 
-    const state = store.getState();
+    const state = store.getState() as any;
     expect(state.auth.isAuthenticated).toBe(false);
     expect(state.auth.user).toBeNull();
     expect(state.auth.token).toBeNull();

@@ -1,11 +1,17 @@
 """
 Pytest configuration and shared fixtures.
 """
+import os
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+
+# Set test environment variables before importing app
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+os.environ["SECRET_KEY"] = "test-secret-key-for-pytest"
+os.environ["BACKEND_CORS_ORIGINS"] = '["http://localhost:3000"]'
 
 from app.main import app
 from app.core.database import get_db, Base
