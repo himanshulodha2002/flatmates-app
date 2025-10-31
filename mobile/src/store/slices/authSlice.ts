@@ -41,7 +41,8 @@ const authSlice = createSlice({
   },
 });
 
-export const { setCredentials, clearCredentials, logout, setLoading, updateUser } = authSlice.actions;
+export const { setCredentials, clearCredentials, logout, setLoading, updateUser } =
+  authSlice.actions;
 
 // Selectors
 export const selectCurrentUser = (state: { auth: AuthState }) => state.auth.user;

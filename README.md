@@ -10,6 +10,15 @@ A collaborative app for flatmates to manage todos, shopping lists, and expenses.
 
 Flatmates App is a full-stack mobile application that helps flatmates coordinate and manage their shared living space. Built with modern technologies, it features a FastAPI backend and React Native Expo frontend.
 
+### Key Features
+
+- **User Authentication**: Google OAuth integration for secure login
+- **Household Management**: Create or join households, manage members and roles
+- **Member Roles**: Owner and member roles with role-based permissions
+- **Invite System**: Email-based invitations with secure tokens (7-day expiry)
+- **Multi-Household Support**: Switch between multiple households
+- **Dark Theme UI**: Modern dark theme with React Native Paper
+
 ## Repository Structure
 
 ```
@@ -196,11 +205,91 @@ EXPO_PUBLIC_ENVIRONMENT=development
 - **Formatting**: Prettier
 - **Type Checking**: TypeScript strict mode
 
+## API Documentation
+
+### Authentication Endpoints
+
+- `POST /api/v1/auth/google/mobile` - Google OAuth login
+- `GET /api/v1/auth/me` - Get current user
+- `POST /api/v1/auth/logout` - Logout
+
+### Household Endpoints
+
+All household endpoints require authentication via JWT Bearer token.
+
+#### Create Household
+```bash
+POST /api/v1/households/
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "name": "My Apartment"
+}
+```
+
+#### List My Households
+```bash
+GET /api/v1/households/mine
+Authorization: Bearer <token>
+```
+
+#### Get Household Details
+```bash
+GET /api/v1/households/{household_id}
+Authorization: Bearer <token>
+```
+
+#### Create Invite (Owner Only)
+```bash
+POST /api/v1/households/{household_id}/invite
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "email": "friend@example.com"
+}
+```
+
+Response includes a `token` field for the invited user to join.
+
+#### Join Household
+```bash
+POST /api/v1/households/join
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "token": "invite-token-here"
+}
+```
+
+#### Update Member Role (Owner Only)
+```bash
+PATCH /api/v1/households/{household_id}/members/{member_id}
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "role": "owner"  # or "member"
+}
+```
+
+#### Remove Member (Owner Only)
+```bash
+DELETE /api/v1/households/{household_id}/members/{member_id}
+Authorization: Bearer <token>
+```
+
+### Interactive API Documentation
+
+- Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs) (when running locally)
+- ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+
 ## Documentation
 
 - [Backend Documentation](backend/README.md)
 - [Mobile Documentation](mobile/README.md)
-- [API Documentation](http://localhost:8000/docs) (when running locally)
 
 ## Contributing
 
