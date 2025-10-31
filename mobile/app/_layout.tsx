@@ -81,6 +81,33 @@ function RootLayoutNav() {
         <Stack>
           <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="create-household"
+            options={{
+              title: 'Create Household',
+              presentation: 'modal',
+            }}
+          />
+          <Stack.Screen
+            name="join-household"
+            options={{
+              title: 'Join Household',
+              presentation: 'modal',
+            }}
+          />
+          <Stack.Screen
+            name="household-switcher"
+            options={{
+              title: 'Switch Household',
+              presentation: 'modal',
+            }}
+          />
+          <Stack.Screen
+            name="members"
+            options={{
+              title: 'Household Members',
+            }}
+          />
         </Stack>
       </ThemeProvider>
     </PaperProvider>

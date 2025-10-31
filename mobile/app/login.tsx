@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Image } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text, Button } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { useGoogleAuth } from '../src/hooks/useGoogleAuth';
@@ -41,9 +41,7 @@ export default function LoginScreen() {
           Sign in with Google
         </Button>
 
-        {(error || localError) && (
-          <Text style={styles.errorText}>{error || localError}</Text>
-        )}
+        {(error || localError) && <Text style={styles.errorText}>{error || localError}</Text>}
       </View>
     </View>
   );
