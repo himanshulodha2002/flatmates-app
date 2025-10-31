@@ -11,7 +11,6 @@ def test_health_check(client):
     """
     response = client.get("/health")
     assert response.status_code == status.HTTP_200_OK
-    
     data = response.json()
     assert "status" in data
     assert data["status"] == "healthy"
@@ -24,7 +23,6 @@ def test_root_endpoint(client):
     """
     response = client.get("/")
     assert response.status_code == status.HTTP_200_OK
-    
     data = response.json()
     assert "message" in data
     assert "version" in data
