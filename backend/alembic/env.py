@@ -16,6 +16,7 @@ from app.db.base import Base
 from app.core.config import settings
 # Import all models for alembic autogenerate
 from app.models.user import User  # noqa: F401
+from app.models.household import Household, HouseholdMember, HouseholdInvite  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
