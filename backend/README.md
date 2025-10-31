@@ -192,6 +192,60 @@ app.include_router(users.router, prefix=f"{settings.API_V1_STR}/users", tags=["u
 
 ## 🧪 Testing
 
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage report
+pytest --cov=app --cov-report=html
+
+# Run specific test file
+pytest tests/test_health.py
+
+# Run tests with markers
+pytest -m unit
+pytest -m integration
+```
+
+### Test Structure
+
+```
+tests/
+├── __init__.py
+├── conftest.py           # Test fixtures and configuration
+├── test_health.py        # Health check endpoint tests
+├── test_auth.py          # Authentication tests
+└── test_database.py      # Database connection tests
+```
+
+### Code Quality
+
+```bash
+# Run flake8 linting
+flake8 app
+
+# Run black formatter
+black app
+
+# Check formatting
+black --check app
+
+# Run isort
+isort app
+```
+
+### Pre-commit Hooks
+
+Install pre-commit hooks for automatic code quality checks:
+
+```bash
+pip install pre-commit
+pre-commit install
+pre-commit run --all-files
+```
+
 The health check endpoint verifies that:
 - The API is running
 - Database connection is working
@@ -259,6 +313,106 @@ python -c "import app"
 Change the port:
 ```bash
 uvicorn app.main:app --reload --port 8001
+```
+
+## 🐳 Docker
+
+### Build and Run with Docker Compose
+
+```bash
+# Build and start services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f backend
+
+# Stop services
+docker-compose down
+
+# Rebuild after changes
+docker-compose up -d --build
+```
+
+### Docker Services
+
+- **backend**: FastAPI application on port 8000
+- **postgres**: PostgreSQL database on port 5432
+
+### Access Services
+
+- API: http://localhost:8000
+- API Docs: http://localhost:8000/docs
+- Health Check: http://localhost:8000/health
+
+## 🚀 Deployment
+
+### Railway Deployment
+
+1. Install Railway CLI:
+   ```bash
+   npm install -g @railway/cli
+   ```
+
+2. Login and link project:
+   ```bash
+   railway login
+   railway link
+   ```
+
+3. Deploy:
+   ```bash
+   railway up
+   ```
+
+4. Set environment variables in Railway dashboard
+
+### Render Deployment
+
+1. Create a new Web Service in Render dashboard
+2. Connect your GitHub repository
+3. Configure:
+   - Build Command: `pip install -r requirements.txt`
+   - Start Command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+4. Add environment variables
+5. Deploy
+
+## 🔄 CI/CD
+
+### GitHub Actions Workflow
+
+The backend CI/CD pipeline (`..github/workflows/backend-ci.yml`) runs automatically on:
+- Push to `main` or `develop` branches
+- Pull requests to `main` branch
+
+**Test Job:**
+- Sets up Python 3.11 with dependency caching
+- Installs dependencies
+- Runs flake8 linting
+- Checks code formatting with black
+- Runs pytest with coverage reporting
+- Uploads coverage to Codecov
+
+**Deploy Job:**
+- Triggers on push to main branch
+- Deploys to Railway/Render (when configured)
+
+### Build Status
+
+![Backend CI/CD](https://github.com/himanshulodha2002/flatmates-app/workflows/Backend%20CI%2FCD/badge.svg)
+
+### Running CI Locally
+
+You can run the same checks locally before pushing:
+
+```bash
+# Linting
+flake8 app
+
+# Formatting check
+black --check app
+
+# Run tests
+pytest --cov=app
 ```
 
 ## 📝 Next Steps

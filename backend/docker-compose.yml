@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: flatmates-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://flatmates:flatmates123@postgres:5432/flatmates
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+      - BACKEND_CORS_ORIGINS=["http://localhost:3000","http://localhost:19006"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - flatmates-network
+    restart: unless-stopped
+    volumes:
+      - ./app:/app/app
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: flatmates-postgres
+    environment:
+      - POSTGRES_USER=flatmates
+      - POSTGRES_PASSWORD=flatmates123
+      - POSTGRES_DB=flatmates
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - flatmates-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flatmates"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:
+    driver: local
+
+networks:
+  flatmates-network:
+    driver: bridge
