@@ -52,19 +52,19 @@ backend/
 
 ### 2. Dependencies (requirements.txt) ✓
 
-All required dependencies are listed with correct versions:
+All required dependencies are listed with correct versions (security patched):
 
 ```
-✓ fastapi==0.109.0
+✓ fastapi==0.109.1 (patched for ReDoS vulnerability)
 ✓ uvicorn[standard]==0.27.0
 ✓ sqlalchemy==2.0.25
 ✓ psycopg2-binary==2.9.9
 ✓ alembic==1.13.1
 ✓ pydantic==2.5.3
 ✓ pydantic-settings==2.1.0
-✓ python-jose[cryptography]==3.3.0
+✓ python-jose[cryptography]==3.4.0 (patched for algorithm confusion)
 ✓ passlib[bcrypt]==1.7.4
-✓ python-multipart==0.0.6
+✓ python-multipart==0.0.18 (patched for DoS vulnerabilities)
 ✓ python-dotenv==1.0.0
 ```
 

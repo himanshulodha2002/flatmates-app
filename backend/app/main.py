@@ -1,6 +1,7 @@
 """
 Main FastAPI application for Flatmates App.
 """
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -9,6 +10,28 @@ from app.core.config import settings
 from app.core.database import engine, get_db
 from app.db.base import Base
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Lifespan context manager for startup and shutdown events.
+    """
+    # Startup: Test database connection
+    try:
+        db = next(get_db())
+        db.execute("SELECT 1")
+        print("✓ Database connection successful")
+        db.close()
+    except Exception as e:
+        print(f"✗ Database connection failed: {e}")
+        print("Make sure PostgreSQL is running and DATABASE_URL is correct")
+    
+    yield
+    
+    # Shutdown: Clean up resources if needed
+    print("Shutting down...")
+
+
 # Create FastAPI app instance
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -16,7 +39,8 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
-    openapi_url=f"{settings.API_V1_STR}/openapi.json"
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    lifespan=lifespan
 )
 
 # Configure CORS
@@ -27,23 +51,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.on_event("startup")
-async def startup_event():
-    """
-    Run on application startup.
-    Test database connection and create tables if needed.
-    """
-    try:
-        # Test database connection
-        db = next(get_db())
-        db.execute("SELECT 1")
-        print("✓ Database connection successful")
-        db.close()
-    except Exception as e:
-        print(f"✗ Database connection failed: {e}")
-        print("Make sure PostgreSQL is running and DATABASE_URL is correct")
 
 
 @app.get("/health")
