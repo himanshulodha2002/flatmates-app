@@ -45,28 +45,28 @@ export interface UpdateTodoItemRequest {
 }
 
 export const todosApi = api.injectEndpoints({
-  endpoints: (builder) => ({
+  endpoints: (builder: any) => ({
     // Get all todo lists for current household
-    getTodoLists: builder.query<TodoList[], void>({
+    getTodoLists: builder.query({
       query: () => '/todos/lists',
-      providesTags: (result) =>
+      providesTags: (result: TodoList[]) =>
         result
           ? [
-              ...result.map(({ id }) => ({ type: 'Todo' as const, id })),
+              ...result.map(({ id }: TodoList) => ({ type: 'Todo' as const, id })),
               { type: 'Todo', id: 'LIST' },
             ]
           : [{ type: 'Todo', id: 'LIST' }],
     }),
 
     // Get a specific todo list with items
-    getTodoList: builder.query<TodoList, string>({
-      query: (listId) => `/todos/lists/${listId}`,
-      providesTags: (result, error, id) => [{ type: 'Todo', id }],
+    getTodoList: builder.query({
+      query: (listId: string) => `/todos/lists/${listId}`,
+      providesTags: (result: any, error: any, id: string) => [{ type: 'Todo', id }],
     }),
 
     // Create a new todo list
-    createTodoList: builder.mutation<TodoList, CreateTodoListRequest>({
-      query: (body) => ({
+    createTodoList: builder.mutation({
+      query: (body: CreateTodoListRequest) => ({
         url: '/todos/lists',
         method: 'POST',
         body,
@@ -75,45 +75,42 @@ export const todosApi = api.injectEndpoints({
     }),
 
     // Create a new todo item
-    createTodoItem: builder.mutation<
-      TodoItem,
-      { listId: string; item: CreateTodoItemRequest }
-    >({
-      query: ({ listId, item }) => ({
+    createTodoItem: builder.mutation({
+      query: ({ listId, item }: { listId: string; item: CreateTodoItemRequest }) => ({
         url: `/todos/lists/${listId}/items`,
         method: 'POST',
         body: item,
       }),
-      invalidatesTags: (result, error, { listId }) => [
+      invalidatesTags: (result: any, error: any, { listId }: { listId: string }) => [
         { type: 'Todo', id: listId },
         { type: 'Todo', id: 'LIST' },
       ],
     }),
 
     // Update a todo item
-    updateTodoItem: builder.mutation<
-      TodoItem,
-      { itemId: string; updates: UpdateTodoItemRequest }
-    >({
-      query: ({ itemId, updates }) => ({
+    updateTodoItem: builder.mutation({
+      query: ({ itemId, updates }: { itemId: string; updates: UpdateTodoItemRequest }) => ({
         url: `/todos/items/${itemId}`,
         method: 'PATCH',
         body: updates,
       }),
       // Optimistic update for toggling completion
-      async onQueryStarted({ itemId, updates }, { dispatch, queryFulfilled }) {
+      async onQueryStarted(
+        { itemId, updates }: { itemId: string; updates: UpdateTodoItemRequest },
+        { dispatch, queryFulfilled }: any
+      ) {
         // Find which list this item belongs to and update it optimistically
         if (updates.is_completed !== undefined) {
           const patchResults: any[] = [];
           
           // Update all cached todo lists
           dispatch(
-            todosApi.util.updateQueryData('getTodoLists', undefined, (draft) => {
+            todosApi.util.updateQueryData('getTodoLists', undefined, (draft: TodoList[]) => {
               for (const list of draft) {
                 if (list.items) {
-                  const item = list.items.find((i) => i.id === itemId);
+                  const item = list.items.find((i: TodoItem) => i.id === itemId);
                   if (item) {
-                    Object.assign(item, updates);
+                    (Object as any).assign(item, updates);
                     if (updates.is_completed) {
                       item.completed_at = new Date().toISOString();
                     } else {
@@ -128,18 +125,18 @@ export const todosApi = api.injectEndpoints({
           try {
             await queryFulfilled;
           } catch {
-            patchResults.forEach((patch) => patch.undo());
+            patchResults.forEach((patch: any) => patch.undo());
           }
         }
       },
-      invalidatesTags: (result, error, { itemId }) => [
+      invalidatesTags: (result: any, error: any, { itemId }: { itemId: string }) => [
         { type: 'Todo', id: 'LIST' },
       ],
     }),
 
     // Delete a todo item
-    deleteTodoItem: builder.mutation<void, string>({
-      query: (itemId) => ({
+    deleteTodoItem: builder.mutation({
+      query: (itemId: string) => ({
         url: `/todos/items/${itemId}`,
         method: 'DELETE',
       }),
