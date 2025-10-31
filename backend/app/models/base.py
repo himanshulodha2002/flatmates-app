@@ -6,8 +6,8 @@ Import all models here for Alembic auto-generation.
 from app.core.database import Base
 
 # Import all models here for Alembic to detect
-# Example:
-# from app.models.user import User
-# from app.models.expense import Expense
+from app.models.user import User  # noqa: F401
+from app.models.household import Household, HouseholdMember  # noqa: F401
+from app.models.shopping import ShoppingList, ShoppingItem  # noqa: F401
 
 __all__ = ["Base"]
