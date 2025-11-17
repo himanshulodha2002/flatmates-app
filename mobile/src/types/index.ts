@@ -154,6 +154,137 @@ export interface TodoStats {
   total: number;
 }
 
+// Shopping List types
+export enum ShoppingListStatus {
+  ACTIVE = 'active',
+  ARCHIVED = 'archived',
+}
+
+export interface ItemCategory {
+  id: string;
+  name: string;
+  icon?: string;
+  color?: string;
+  household_id?: string;
+  created_at: string;
+}
+
+export interface ShoppingList {
+  id: string;
+  household_id: string;
+  name: string;
+  description?: string;
+  status: ShoppingListStatus;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ShoppingListItem {
+  id: string;
+  shopping_list_id: string;
+  name: string;
+  quantity: number;
+  unit?: string;
+  category?: string;
+  is_purchased: boolean;
+  assigned_to_id?: string;
+  price?: number;
+  notes?: string;
+  is_recurring: boolean;
+  recurring_pattern?: string;
+  recurring_until?: string;
+  last_recurring_date?: string;
+  checked_off_by?: string;
+  checked_off_at?: string;
+  position: number;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ShoppingListItemWithDetails extends ShoppingListItem {
+  assigned_to_name?: string;
+  assigned_to_email?: string;
+  checked_off_by_name?: string;
+  created_by_name: string;
+  created_by_email: string;
+}
+
+export interface ShoppingListWithItems {
+  id: string;
+  household_id: string;
+  name: string;
+  description?: string;
+  status: ShoppingListStatus;
+  created_by: string;
+  created_by_name: string;
+  created_by_email: string;
+  created_at: string;
+  updated_at: string;
+  items: ShoppingListItemWithDetails[];
+}
+
+export interface ShoppingListCreateRequest {
+  household_id: string;
+  name: string;
+  description?: string;
+}
+
+export interface ShoppingListUpdateRequest {
+  name?: string;
+  description?: string;
+  status?: ShoppingListStatus;
+}
+
+export interface ShoppingListItemCreateRequest {
+  name: string;
+  quantity?: number;
+  unit?: string;
+  category?: string;
+  assigned_to_id?: string;
+  price?: number;
+  notes?: string;
+  is_recurring?: boolean;
+  recurring_pattern?: string;
+  recurring_until?: string;
+  position?: number;
+}
+
+export interface ShoppingListItemUpdateRequest {
+  name?: string;
+  quantity?: number;
+  unit?: string;
+  category?: string;
+  is_purchased?: boolean;
+  assigned_to_id?: string;
+  price?: number;
+  notes?: string;
+  is_recurring?: boolean;
+  recurring_pattern?: string;
+  recurring_until?: string;
+  position?: number;
+}
+
+export interface ShoppingListItemPurchaseUpdateRequest {
+  is_purchased: boolean;
+}
+
+export interface ShoppingListStats {
+  total_items: number;
+  purchased_items: number;
+  pending_items: number;
+  total_price?: number;
+  categories: Record<string, number>;
+}
+
+export interface ItemCategoryCreateRequest {
+  name: string;
+  icon?: string;
+  color?: string;
+  household_id?: string;
+}
+
 // Expense types
 export enum ExpenseCategory {
   GROCERIES = 'groceries',
