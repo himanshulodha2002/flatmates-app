@@ -16,6 +16,7 @@ import householdReducer from './slices/householdSlice';
 import expenseReducer from './slices/expenseSlice';
 import shoppingReducer from './slices/shoppingSlice';
 import { api } from './services/api';
+import { notificationMiddleware } from './middleware/notificationMiddleware';
 
 // Persist configuration
 const persistConfig = {
@@ -45,7 +46,7 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
-    }).concat(api.middleware),
+    }).concat(api.middleware, notificationMiddleware),
 });
 
 // Setup listeners for RTK Query

@@ -12,12 +12,32 @@ Flatmates App is a full-stack mobile application that helps flatmates coordinate
 
 ### Key Features
 
+#### Core Features
 - **User Authentication**: Google OAuth integration for secure login
 - **Household Management**: Create or join households, manage members and roles
 - **Member Roles**: Owner and member roles with role-based permissions
 - **Invite System**: Email-based invitations with secure tokens (7-day expiry)
 - **Multi-Household Support**: Switch between multiple households
-- **Dark Theme UI**: Modern dark theme with React Native Paper
+- **Expense Tracking**: Log and split expenses with multiple split types (equal, custom, percentage)
+- **Shopping Lists**: Collaborative shopping lists with real-time updates
+- **Task Management**: Create, assign, and track household tasks and todos
+- **Dark Theme UI**: Modern dark theme with Material Design 3 and React Native Paper
+
+#### Advanced Features (Phase 7 - Polish & QA)
+- ✅ **Push Notifications**: Real-time notifications for expenses, shopping, tasks, and household updates
+- ✅ **Error Handling**: Comprehensive error boundaries and network error recovery
+- ✅ **Form Validation**: Robust validation for all user inputs with helpful error messages
+- ✅ **Onboarding Flow**: Beautiful welcome screens for new users
+- ✅ **Feature Tutorials**: Interactive tutorials for key features
+- ✅ **Offline Support**: Redux Persist for offline data access
+- ✅ **Integration Tests**: Comprehensive test coverage for core workflows
+- ✅ **Play Store Ready**: Complete metadata, privacy policy, and terms of service
+
+#### AI-Powered Features
+- **Smart Categorization**: AI-powered expense categorization with confidence scores
+- **Receipt OCR**: Scan receipts to automatically extract expense details
+- **Task Suggestions**: AI-generated household task recommendations
+- **Dual Provider Support**: OpenAI and Google Gemini with automatic fallback
 
 ## Repository Structure
 
@@ -43,11 +63,15 @@ flatmates-app/
 - **Deployment**: Docker, Railway, Render
 
 ### Frontend
-- **Framework**: React Native with Expo
+- **Framework**: React Native with Expo (~54.0)
 - **Language**: TypeScript
-- **State Management**: Redux Toolkit
-- **UI Library**: React Native Paper
+- **State Management**: Redux Toolkit with Redux Persist
+- **UI Library**: React Native Paper (Material Design 3)
+- **Routing**: Expo Router (file-based routing)
 - **Testing**: Jest with React Native Testing Library
+- **Notifications**: Expo Notifications
+- **Authentication**: Google Sign-In
+- **AI Integration**: OpenAI and Google Gemini APIs
 
 ## Quick Start
 

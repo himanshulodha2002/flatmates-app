@@ -6,7 +6,7 @@ import type { RootState } from '../index';
 // Example: EXPO_PUBLIC_API_URL=http://192.168.1.100:8000/api/v1
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
-// Create a base query with auth token injection
+// Create a base query with auth token injection and error handling
 const baseQuery = fetchBaseQuery({
   baseUrl: BASE_URL,
   prepareHeaders: (headers, { getState }) => {
@@ -20,10 +20,40 @@ const baseQuery = fetchBaseQuery({
 
     return headers;
   },
+  timeout: 30000, // 30 second timeout
 });
 
-// Create a base query with retry logic
-const baseQueryWithRetry = retry(baseQuery, { maxRetries: 2 });
+// Enhanced base query with retry logic and error handling
+const baseQueryWithRetry = retry(
+  async (args, api, extraOptions) => {
+    const result = await baseQuery(args, api, extraOptions);
+
+    // Log errors in development
+    if (__DEV__ && result.error) {
+      console.error('API Error:', {
+        endpoint: typeof args === 'string' ? args : args.url,
+        error: result.error,
+      });
+    }
+
+    // Handle specific error cases
+    if (result.error) {
+      // Network error
+      if (result.error.status === 'FETCH_ERROR') {
+        console.log('Network error detected. Retrying...');
+      }
+
+      // Unauthorized - token might be expired
+      if (result.error.status === 401) {
+        console.log('Unauthorized. Token may have expired.');
+        // Could dispatch a logout action here if needed
+      }
+    }
+
+    return result;
+  },
+  { maxRetries: 3 }
+);
 
 // Define the API
 export const api = createApi({
