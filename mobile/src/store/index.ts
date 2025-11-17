@@ -13,6 +13,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import authReducer from './slices/authSlice';
 import householdReducer from './slices/householdSlice';
+import shoppingReducer from './slices/shoppingSlice';
 import { api } from './services/api';
 
 // Persist configuration
@@ -20,13 +21,14 @@ const persistConfig = {
   key: 'root',
   version: 1,
   storage: AsyncStorage,
-  whitelist: ['auth', 'household'], // Persist auth and household state
+  whitelist: ['auth', 'household', 'shopping'], // Persist auth, household, and shopping state
 };
 
 // Combine reducers
 const rootReducer = combineReducers({
   auth: authReducer,
   household: householdReducer,
+  shopping: shoppingReducer,
   [api.reducerPath]: api.reducer,
 });
 
