@@ -10,5 +10,24 @@ from app.models.household import (
     MemberRole,
     InviteStatus,
 )
+from app.models.expense import (
+    Expense,
+    ExpenseSplit,
+    ExpenseCategory,
+    SplitType,
+    PaymentMethod,
+)
 
-__all__ = ["User", "Household", "HouseholdMember", "HouseholdInvite", "MemberRole", "InviteStatus"]
+__all__ = [
+    "User",
+    "Household",
+    "HouseholdMember",
+    "HouseholdInvite",
+    "MemberRole",
+    "InviteStatus",
+    "Expense",
+    "ExpenseSplit",
+    "ExpenseCategory",
+    "SplitType",
+    "PaymentMethod",
+]

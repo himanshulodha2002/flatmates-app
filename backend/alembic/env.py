@@ -18,6 +18,7 @@ from app.core.config import settings
 from app.models.user import User  # noqa: F401
 from app.models.household import Household, HouseholdMember, HouseholdInvite  # noqa: F401
 from app.models.todo import Todo  # noqa: F401
+from app.models.expense import Expense, ExpenseSplit  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
