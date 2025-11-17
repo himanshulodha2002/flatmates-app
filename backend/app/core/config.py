@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""
 
+    # Google Gemini AI
+    GEMINI_API_KEY: str = ""
+
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = []
 

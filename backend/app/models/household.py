@@ -44,6 +44,9 @@ class Household(Base):
     invites = relationship(
         "HouseholdInvite", back_populates="household", cascade="all, delete-orphan"
     )
+    expenses = relationship(
+        "Expense", back_populates="household", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<Household(id={self.id}, name={self.name})>"

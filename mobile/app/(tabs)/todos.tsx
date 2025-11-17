@@ -29,7 +29,8 @@ import {
   useGetTodoStatsQuery,
 } from '@/store/services/todoApi';
 import { useGetHouseholdDetailsQuery } from '@/store/services/householdApi';
-import { Todo, TodoStatus, TodoPriority, TodoCreateRequest, TodoUpdateRequest } from '@/types';
+import { useGetTaskSuggestionsMutation } from '@/store/services/expenseApi';
+import { Todo, TodoStatus, TodoPriority, TodoCreateRequest, TodoUpdateRequest, TaskSuggestion } from '@/types';
 
 export default function TodosScreen() {
   const router = useRouter();
@@ -43,6 +44,8 @@ export default function TodosScreen() {
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [dialogVisible, setDialogVisible] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
+  const [suggestionsDialogVisible, setSuggestionsDialogVisible] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<TaskSuggestion[]>([]);
 
   // Form state
   const [title, setTitle] = useState('');
@@ -72,6 +75,7 @@ export default function TodosScreen() {
   const [updateTodoStatus] = useUpdateTodoStatusMutation();
   const [updateTodo] = useUpdateTodoMutation();
   const [deleteTodo] = useDeleteTodoMutation();
+  const [getTaskSuggestions, { isLoading: isLoadingSuggestions }] = useGetTaskSuggestionsMutation();
 
   const handleCreateTodo = async () => {
     if (!title.trim() || !activeHouseholdId) return;
@@ -213,6 +217,42 @@ export default function TodosScreen() {
     return member?.full_name || 'Unknown';
   };
 
+  const handleGetAISuggestions = async () => {
+    if (!activeHouseholdId) return;
+
+    try {
+      const result = await getTaskSuggestions(activeHouseholdId).unwrap();
+      setAiSuggestions(result.suggestions);
+      setSuggestionsDialogVisible(true);
+    } catch (error: any) {
+      setSnackbarMessage('Failed to get AI suggestions');
+      setSnackbarVisible(true);
+    }
+  };
+
+  const handleCreateFromSuggestion = async (suggestion: TaskSuggestion) => {
+    if (!activeHouseholdId) return;
+
+    try {
+      const todoData: TodoCreateRequest = {
+        household_id: activeHouseholdId,
+        title: suggestion.title,
+        description: suggestion.description,
+        priority: suggestion.priority as TodoPriority,
+      };
+
+      await createTodo(todoData).unwrap();
+      setSnackbarMessage('Todo created from AI suggestion');
+      setSnackbarVisible(true);
+
+      // Remove the suggestion from the list
+      setAiSuggestions(aiSuggestions.filter((s) => s.title !== suggestion.title));
+    } catch (error: any) {
+      setSnackbarMessage(error?.data?.detail || 'Failed to create todo');
+      setSnackbarVisible(true);
+    }
+  };
+
   if (!activeHouseholdId) {
     return (
       <View style={styles.centerContainer}>
@@ -310,6 +350,13 @@ export default function TodosScreen() {
             icon="account"
           >
             Assigned to Me
+          </Chip>
+          <Chip
+            onPress={handleGetAISuggestions}
+            style={[styles.chip, styles.aiChip]}
+            icon="robot"
+          >
+            AI Suggestions
           </Chip>
         </ScrollView>
       </View>
@@ -420,8 +467,76 @@ export default function TodosScreen() {
       {/* Create Todo FAB */}
       <FAB style={styles.fab} icon="plus" onPress={openCreateDialog} />
 
-      {/* Create/Edit Todo Dialog */}
+      {/* AI Suggestions Dialog */}
       <Portal>
+        <Dialog
+          visible={suggestionsDialogVisible}
+          onDismiss={() => setSuggestionsDialogVisible(false)}
+          style={styles.suggestionsDialog}
+        >
+          <Dialog.Title>AI Task Suggestions</Dialog.Title>
+          <Dialog.ScrollArea>
+            <ScrollView>
+              {isLoadingSuggestions ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" />
+                  <Text variant="bodyMedium" style={styles.loadingText}>
+                    AI is analyzing your household...
+                  </Text>
+                </View>
+              ) : aiSuggestions.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Text variant="bodyMedium" style={styles.emptyText}>
+                    No suggestions available
+                  </Text>
+                </View>
+              ) : (
+                aiSuggestions.map((suggestion, index) => (
+                  <Card key={index} style={styles.suggestionCard}>
+                    <Card.Content>
+                      <View style={styles.suggestionHeader}>
+                        <Chip
+                          style={[
+                            styles.priorityChip,
+                            { backgroundColor: getPriorityColor(suggestion.priority as TodoPriority) },
+                          ]}
+                          textStyle={styles.priorityText}
+                        >
+                          {suggestion.priority.toUpperCase()}
+                        </Chip>
+                        <Chip compact icon="tag">
+                          {suggestion.category}
+                        </Chip>
+                      </View>
+                      <Text variant="titleMedium" style={styles.suggestionTitle}>
+                        {suggestion.title}
+                      </Text>
+                      <Text variant="bodyMedium" style={styles.suggestionDescription}>
+                        {suggestion.description}
+                      </Text>
+                      <Text variant="bodySmall" style={styles.suggestionReasoning}>
+                        AI Reasoning: {suggestion.reasoning}
+                      </Text>
+                      <Button
+                        mode="contained"
+                        onPress={() => handleCreateFromSuggestion(suggestion)}
+                        style={styles.createButton}
+                        icon="plus"
+                      >
+                        Create Task
+                      </Button>
+                    </Card.Content>
+                  </Card>
+                ))
+              )}
+            </ScrollView>
+          </Dialog.ScrollArea>
+          <Dialog.Actions>
+            <Button onPress={() => setSuggestionsDialogVisible(false)}>Close</Button>
+          </Dialog.Actions>
+        </Dialog>
+
+        {/* Create/Edit Todo Dialog */}
         <Dialog visible={dialogVisible} onDismiss={() => setDialogVisible(false)}>
           <Dialog.Title>{editingTodo ? 'Edit Todo' : 'Create Todo'}</Dialog.Title>
           <Dialog.ScrollArea>
@@ -530,6 +645,9 @@ const styles = StyleSheet.create({
   chip: {
     marginRight: 8,
   },
+  aiChip: {
+    backgroundColor: '#4CAF50',
+  },
   list: {
     flex: 1,
     padding: 12,
@@ -605,5 +723,41 @@ const styles = StyleSheet.create({
   label: {
     marginBottom: 8,
     opacity: 0.7,
+  },
+  suggestionsDialog: {
+    maxHeight: '80%',
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    opacity: 0.7,
+  },
+  suggestionCard: {
+    marginBottom: 12,
+    backgroundColor: '#2C2C2C',
+  },
+  suggestionHeader: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  suggestionTitle: {
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  suggestionDescription: {
+    marginBottom: 8,
+    opacity: 0.9,
+  },
+  suggestionReasoning: {
+    fontStyle: 'italic',
+    opacity: 0.7,
+    marginBottom: 12,
+  },
+  createButton: {
+    marginTop: 8,
   },
 });

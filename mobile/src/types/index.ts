@@ -153,3 +153,111 @@ export interface TodoStats {
   overdue: number;
   total: number;
 }
+
+// Expense types
+export interface Expense {
+  id: string;
+  household_id: string;
+  title: string;
+  description?: string;
+  amount: string; // Decimal as string
+  category: string;
+  subcategory?: string;
+  tags?: string[];
+  ai_categorized: boolean;
+  ai_confidence?: string; // Decimal as string
+  ai_reasoning?: string;
+  receipt_url?: string;
+  receipt_data?: any;
+  expense_date: string;
+  paid_by_id?: string;
+  created_by: string;
+  split_type?: string;
+  split_data?: any;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ExpenseWithDetails extends Expense {
+  paid_by_name?: string;
+  paid_by_email?: string;
+  created_by_name: string;
+  created_by_email: string;
+}
+
+export interface ExpenseCreateRequest {
+  household_id: string;
+  title: string;
+  description?: string;
+  amount: number | string;
+  category?: string;
+  subcategory?: string;
+  tags?: string[];
+  expense_date: string;
+  paid_by_id?: string;
+  split_type?: string;
+  split_data?: any;
+  use_ai_categorization?: boolean;
+}
+
+export interface ExpenseUpdateRequest {
+  title?: string;
+  description?: string;
+  amount?: number | string;
+  category?: string;
+  subcategory?: string;
+  tags?: string[];
+  expense_date?: string;
+  paid_by_id?: string;
+  split_type?: string;
+  split_data?: any;
+}
+
+export interface ExpenseStats {
+  total_expenses: number;
+  total_amount: string; // Decimal as string
+  category_breakdown: Record<string, string>;
+  monthly_total: string; // Decimal as string
+  user_balances?: Record<string, string>;
+}
+
+export interface AICategorizeRequest {
+  description: string;
+  amount: number | string;
+  context?: string;
+}
+
+export interface AICategorizeResponse {
+  category: string;
+  subcategory?: string;
+  confidence: number;
+  reasoning: string;
+  suggested_tags: string[];
+}
+
+export interface ReceiptOCRResponse {
+  success: boolean;
+  merchant?: string;
+  date?: string;
+  total?: string;
+  currency?: string;
+  items?: Array<{ description: string; amount: number }>;
+  tax?: string;
+  payment_method?: string;
+  confidence?: number;
+  notes?: string;
+  error?: string;
+}
+
+export interface TaskSuggestion {
+  title: string;
+  description: string;
+  priority: string;
+  category: string;
+  reasoning: string;
+}
+
+export interface TaskSuggestionsResponse {
+  suggestions: TaskSuggestion[];
+  count: number;
+}

@@ -4,7 +4,7 @@ API v1 router that includes all endpoint routers.
 
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import auth, households, todos
+from app.api.v1.endpoints import auth, households, todos, expenses
 
 api_router = APIRouter()
 
@@ -16,3 +16,6 @@ api_router.include_router(households.router, prefix="/households", tags=["househ
 
 # Include todo endpoints
 api_router.include_router(todos.router, prefix="/todos", tags=["todos"])
+
+# Include expense endpoints
+api_router.include_router(expenses.router, prefix="/expenses", tags=["expenses"])
