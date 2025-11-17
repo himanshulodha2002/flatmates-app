@@ -13,6 +13,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import authReducer from './slices/authSlice';
 import householdReducer from './slices/householdSlice';
+import expenseReducer from './slices/expenseSlice';
 import { api } from './services/api';
 
 // Persist configuration
@@ -27,6 +28,7 @@ const persistConfig = {
 const rootReducer = combineReducers({
   auth: authReducer,
   household: householdReducer,
+  expense: expenseReducer,
   [api.reducerPath]: api.reducer,
 });
 
