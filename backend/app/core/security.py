@@ -86,13 +86,13 @@ def decode_access_token(token: str) -> Optional[Dict[str, Any]]:
 def verify_token(token: str) -> Dict[str, Any]:
     """
     Verify a JWT token and return the payload.
-    
+
     Args:
         token: JWT token string to verify
-        
+
     Returns:
         Decoded token payload
-        
+
     Raises:
         JWTError: If token is invalid or expired
     """

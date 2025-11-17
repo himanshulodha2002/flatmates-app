@@ -1,6 +1,7 @@
 """
 Household models for managing flatmate groups.
 """
+
 import uuid
 from datetime import datetime
 from sqlalchemy import Column, String, DateTime, ForeignKey, Enum as SQLEnum, UniqueConstraint
@@ -13,12 +14,14 @@ from app.models.user import GUID
 
 class MemberRole(str, enum.Enum):
     """Enum for household member roles."""
+
     OWNER = "owner"
     MEMBER = "member"
 
 
 class InviteStatus(str, enum.Enum):
     """Enum for invite statuses."""
+
     PENDING = "pending"
     ACCEPTED = "accepted"
     EXPIRED = "expired"
@@ -35,8 +38,12 @@ class Household(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relationships
-    members = relationship("HouseholdMember", back_populates="household", cascade="all, delete-orphan")
-    invites = relationship("HouseholdInvite", back_populates="household", cascade="all, delete-orphan")
+    members = relationship(
+        "HouseholdMember", back_populates="household", cascade="all, delete-orphan"
+    )
+    invites = relationship(
+        "HouseholdInvite", back_populates="household", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<Household(id={self.id}, name={self.name})>"
@@ -58,9 +65,7 @@ class HouseholdMember(Base):
     user = relationship("User")
 
     # Constraints
-    __table_args__ = (
-        UniqueConstraint('user_id', 'household_id', name='uix_user_household'),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "household_id", name="uix_user_household"),)
 
     def __repr__(self):
         return f"<HouseholdMember(user_id={self.user_id}, household_id={self.household_id}, role={self.role})>"

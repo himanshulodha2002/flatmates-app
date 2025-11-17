@@ -8,8 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.database import engine, get_db
-from app.db.base import Base
+from app.core.database import get_db
+from app.api.v1.api import api_router
 
 
 @asynccontextmanager
@@ -90,5 +90,4 @@ async def root():
 
 
 # Include API v1 router
-from app.api.v1.api import api_router
 app.include_router(api_router, prefix=settings.API_V1_STR)
