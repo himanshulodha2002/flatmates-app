@@ -11,7 +11,7 @@ from app.api.deps import get_db, get_current_user
 from app.core.config import settings
 from app.core.security import create_access_token
 from app.models.user import User
-from app.schemas.auth import GoogleTokenRequest, TokenResponse, UserResponse
+from app.schemas.auth import GoogleTokenRequest, TokenResponse, UserResponse, UserUpdate
 
 router = APIRouter()
 
@@ -128,3 +128,32 @@ async def logout(current_user: User = Depends(get_current_user)):
         Success message
     """
     return {"message": "Successfully logged out"}
+
+
+@router.patch("/me", response_model=UserResponse, status_code=status.HTTP_200_OK)
+async def update_user_profile(
+    user_update: UserUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Update current user's profile.
+
+    Args:
+        user_update: Fields to update
+        current_user: Current authenticated user from JWT token
+        db: Database session
+
+    Returns:
+        Updated user information
+    """
+    # Update fields if provided
+    if user_update.full_name is not None:
+        current_user.full_name = user_update.full_name
+    if user_update.profile_picture_url is not None:
+        current_user.profile_picture_url = user_update.profile_picture_url
+
+    db.commit()
+    db.refresh(current_user)
+
+    return UserResponse.model_validate(current_user)

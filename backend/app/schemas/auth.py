@@ -35,3 +35,10 @@ class GoogleTokenRequest(BaseModel):
     """Schema for Google token request."""
 
     id_token: str
+
+
+class UserUpdate(BaseModel):
+    """Schema for updating user profile."""
+
+    full_name: Optional[str] = None
+    profile_picture_url: Optional[str] = None

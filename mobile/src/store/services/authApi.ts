@@ -11,6 +11,11 @@ interface TokenResponse {
   user: User;
 }
 
+interface UserUpdateRequest {
+  full_name?: string;
+  profile_picture_url?: string;
+}
+
 // Extend the base API with auth endpoints
 export const authApi = api.injectEndpoints({
   endpoints: (builder) => ({
@@ -26,6 +31,14 @@ export const authApi = api.injectEndpoints({
       query: () => '/auth/me',
       providesTags: ['User'],
     }),
+    updateUserProfile: builder.mutation<User, UserUpdateRequest>({
+      query: (data) => ({
+        url: '/auth/me',
+        method: 'PATCH',
+        body: data,
+      }),
+      invalidatesTags: ['User'],
+    }),
     logout: builder.mutation<{ message: string }, void>({
       query: () => ({
         url: '/auth/logout',
@@ -37,4 +50,9 @@ export const authApi = api.injectEndpoints({
   overrideExisting: false,
 });
 
-export const { useGoogleLoginMutation, useGetCurrentUserQuery, useLogoutMutation } = authApi;
+export const {
+  useGoogleLoginMutation,
+  useGetCurrentUserQuery,
+  useUpdateUserProfileMutation,
+  useLogoutMutation,
+} = authApi;
