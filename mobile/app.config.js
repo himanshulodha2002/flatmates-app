@@ -44,7 +44,7 @@ module.exports = () => {
         apiUrl,
         environment,
         eas: {
-          projectId: process.env.EAS_PROJECT_ID || '', // Set EAS_PROJECT_ID environment variable
+          projectId: '61b81007-e38b-4835-b230-7b3339829473',
         },
       },
     },
