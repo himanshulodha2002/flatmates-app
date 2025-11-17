@@ -1,10 +1,10 @@
-# Google Gemini AI Integration
+# AI Integration (Gemini & OpenAI)
 
-This document describes the Google Gemini AI features integrated into the Flatmates App.
+This document describes the AI features integrated into the Flatmates App. The app supports **both Google Gemini and OpenAI** (including GitHub Models) as AI providers.
 
 ## Overview
 
-The Flatmates App now uses Google Gemini AI to provide intelligent features for expense tracking and task management:
+The Flatmates App uses AI to provide intelligent features for expense tracking and task management:
 
 1. **Smart Expense Categorization** - Automatically categorize expenses using AI
 2. **Receipt OCR** - Extract expense data from receipt images
@@ -171,6 +171,33 @@ POST /api/v1/expenses/ai/suggest-tasks?household_id={household_id}
    - Create tasks directly from suggestions
    - Suggestions update based on household changes
 
+## AI Provider Support
+
+The app supports **two AI providers** with automatic fallback:
+
+### Supported Providers
+
+1. **Google Gemini** (`gemini-1.5-flash`)
+   - Free tier available
+   - Excellent vision capabilities for receipt OCR
+   - Get API key: [Google AI Studio](https://makersuite.google.com/app/apikey)
+
+2. **OpenAI via GitHub Models** (`gpt-4o`)
+   - Free for GitHub users
+   - Structured JSON output support
+   - Get GitHub token: [GitHub Settings](https://github.com/settings/tokens)
+   - Endpoint: `https://models.inference.ai.azure.com`
+
+### Provider Selection
+
+Set the `AI_PROVIDER` environment variable to choose your provider:
+
+- `gemini` - Use Google Gemini (default)
+- `openai` - Use OpenAI/GitHub Models
+- `auto` - Try OpenAI first, fallback to Gemini
+
+The system automatically falls back to the other provider if your primary choice is unavailable.
+
 ## Configuration
 
 ### Backend Setup
@@ -183,16 +210,35 @@ pip install -r requirements.txt
 
 The following packages are added:
 - `google-generativeai==0.8.3` - Gemini AI SDK
+- `openai==1.54.0` - OpenAI SDK (for GitHub Models)
 - `pillow==10.2.0` - Image processing for OCR
 
 2. **Set Environment Variables:**
 
 Add to `.env` file:
+
+**For Google Gemini:**
 ```env
+AI_PROVIDER=gemini
 GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
-Get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+**For OpenAI/GitHub Models:**
+```env
+AI_PROVIDER=openai
+OPENAI_API_KEY=your_github_token_here
+OPENAI_BASE_URL=https://models.inference.ai.azure.com
+OPENAI_MODEL=gpt-4o
+```
+
+**For Both (with fallback):**
+```env
+AI_PROVIDER=auto
+GEMINI_API_KEY=your_gemini_api_key_here
+OPENAI_API_KEY=your_github_token_here
+OPENAI_BASE_URL=https://models.inference.ai.azure.com
+OPENAI_MODEL=gpt-4o
+```
 
 3. **Run Database Migrations:**
 ```bash
@@ -229,7 +275,8 @@ These are automatically requested when features are used.
 backend/
 ├── app/
 │   ├── services/
-│   │   └── gemini_service.py      # AI service integration
+│   │   ├── ai_service.py          # Unified AI service (supports both providers)
+│   │   └── gemini_service.py      # Legacy (kept for reference)
 │   ├── models/
 │   │   └── expense.py             # Expense model with AI fields
 │   ├── schemas/
@@ -240,8 +287,10 @@ backend/
 
 **Key Components:**
 
-1. **GeminiService** (`gemini_service.py`)
-   - Singleton service for AI operations
+1. **AIService** (`ai_service.py`)
+   - Unified service supporting multiple AI providers
+   - Provider implementations: `GeminiProvider`, `OpenAIProvider`
+   - Automatic provider selection and fallback
    - Handles categorization, OCR, and suggestions
    - Configurable via environment variables
    - Graceful fallback if AI unavailable
@@ -351,9 +400,10 @@ All AI features include error handling:
 ## Security & Privacy
 
 1. **API Key Protection:**
-   - Store GEMINI_API_KEY in environment variables
+   - Store GEMINI_API_KEY and OPENAI_API_KEY in environment variables
    - Never commit to version control
    - Rotate keys periodically
+   - For GitHub Models, use GitHub Personal Access Tokens
 
 2. **Data Privacy:**
    - Receipt images processed server-side
@@ -394,9 +444,11 @@ Potential improvements for AI features:
 ### Common Issues
 
 1. **AI Categorization Not Working:**
-   - Check GEMINI_API_KEY is set correctly
+   - Check AI_PROVIDER is set correctly (`gemini`, `openai`, or `auto`)
+   - Verify GEMINI_API_KEY or OPENAI_API_KEY is set correctly
    - Verify internet connection
-   - Check Gemini API quota/billing
+   - Check API quota/billing for your provider
+   - Try switching providers if one is unavailable
 
 2. **Receipt OCR Failing:**
    - Ensure image is clear and well-lit
@@ -411,7 +463,7 @@ Potential improvements for AI features:
 
 ### Debug Mode
 
-Enable debug logging in `gemini_service.py`:
+Enable debug logging in `ai_service.py`:
 
 ```python
 import logging
@@ -419,9 +471,11 @@ logging.basicConfig(level=logging.DEBUG)
 ```
 
 This will print:
+- Selected AI provider
 - AI request/response details
 - Error stack traces
 - Performance metrics
+- Provider fallback information
 
 ## Support
 
@@ -433,6 +487,7 @@ For issues or questions:
 
 ## Credits
 
-- **Google Gemini AI**: Powering categorization, OCR, and suggestions
+- **Google Gemini AI**: AI provider for categorization, OCR, and suggestions
+- **OpenAI (via GitHub Models)**: Alternative AI provider with structured output
 - **Expo Image Picker**: Mobile camera/gallery integration
 - **React Native Paper**: Material Design UI components

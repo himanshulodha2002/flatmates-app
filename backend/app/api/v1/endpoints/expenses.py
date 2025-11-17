@@ -27,7 +27,7 @@ from app.schemas.expense import (
     TaskSuggestionsResponse,
     TaskSuggestion,
 )
-from app.services.gemini_service import gemini_service
+from app.services.ai_service import ai_service
 
 router = APIRouter()
 
@@ -117,7 +117,7 @@ async def create_expense(
     # Use AI categorization if requested and category not provided
     ai_result = None
     if expense_data.use_ai_categorization and not expense_data.category:
-        ai_result = await gemini_service.categorize_expense(
+        ai_result = await ai_service.categorize_expense(
             description=f"{expense_data.title} - {expense_data.description or ''}",
             amount=float(expense_data.amount),
             context=None
@@ -342,7 +342,7 @@ async def categorize_with_ai(
     """
     Get AI categorization for an expense without creating it.
     """
-    result = await gemini_service.categorize_expense(
+    result = await ai_service.categorize_expense(
         description=request.description,
         amount=float(request.amount),
         context=request.context
@@ -370,7 +370,7 @@ async def extract_receipt_data(
     image_data = await file.read()
 
     # Perform OCR
-    result = await gemini_service.extract_receipt_data(
+    result = await ai_service.extract_receipt_data(
         image_data=image_data,
         mime_type=file.content_type
     )
@@ -423,7 +423,7 @@ async def suggest_tasks(
     ]
 
     # Get AI suggestions
-    suggestions_raw = await gemini_service.suggest_tasks(
+    suggestions_raw = await ai_service.suggest_tasks(
         household_context={"member_count": member_count},
         existing_tasks=task_list,
         recent_expenses=expense_list

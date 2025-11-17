@@ -30,6 +30,14 @@ class Settings(BaseSettings):
     # Google Gemini AI
     GEMINI_API_KEY: str = ""
 
+    # OpenAI / GitHub Models
+    OPENAI_API_KEY: str = ""  # Can be GitHub token for GitHub Models
+    OPENAI_BASE_URL: str = "https://models.inference.ai.azure.com"  # GitHub Models endpoint
+    OPENAI_MODEL: str = "gpt-4o"  # Default model
+
+    # AI Provider Selection
+    AI_PROVIDER: str = "gemini"  # Options: "gemini", "openai", "auto"
+
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = []
 
