@@ -85,3 +85,71 @@ export interface HouseholdState {
   households: Household[];
   currentHousehold: HouseholdWithMembers | null;
 }
+
+// Todo types
+export enum TodoStatus {
+  PENDING = 'pending',
+  IN_PROGRESS = 'in_progress',
+  COMPLETED = 'completed',
+}
+
+export enum TodoPriority {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+}
+
+export interface Todo {
+  id: string;
+  household_id: string;
+  title: string;
+  description?: string;
+  status: TodoStatus;
+  priority: TodoPriority;
+  due_date?: string;
+  assigned_to_id?: string;
+  created_by: string;
+  recurring_pattern?: string;
+  recurring_until?: string;
+  parent_todo_id?: string;
+  completed_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TodoWithDetails extends Todo {
+  assigned_to_name?: string;
+  assigned_to_email?: string;
+  created_by_name: string;
+  created_by_email: string;
+}
+
+export interface TodoCreateRequest {
+  household_id: string;
+  title: string;
+  description?: string;
+  priority?: TodoPriority;
+  due_date?: string;
+  assigned_to_id?: string;
+  recurring_pattern?: string;
+  recurring_until?: string;
+}
+
+export interface TodoUpdateRequest {
+  title?: string;
+  description?: string;
+  status?: TodoStatus;
+  priority?: TodoPriority;
+  due_date?: string;
+  assigned_to_id?: string;
+  recurring_pattern?: string;
+  recurring_until?: string;
+}
+
+export interface TodoStats {
+  pending: number;
+  in_progress: number;
+  completed: number;
+  overdue: number;
+  total: number;
+}
