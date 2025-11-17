@@ -3,137 +3,182 @@ Pydantic schemas for expense management.
 """
 
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from decimal import Decimal
+from typing import List, Optional
 from uuid import UUID
 from pydantic import BaseModel, Field
-from decimal import Decimal
+
+from app.models.expense import ExpenseCategory, SplitType, PaymentMethod
+
+
+# Split schemas
+class ExpenseSplitCreate(BaseModel):
+    """Schema for creating an expense split."""
+
+    user_id: UUID
+    amount_owed: Decimal = Field(..., gt=0, description="Amount owed by this user")
+
+
+class ExpenseSplitUpdate(BaseModel):
+    """Schema for updating an expense split."""
+
+    amount_owed: Optional[Decimal] = Field(None, gt=0, description="Amount owed by this user")
+    is_settled: Optional[bool] = None
+
+
+class ExpenseSplitResponse(BaseModel):
+    """Schema for expense split response."""
+
+    id: UUID
+    expense_id: UUID
+    user_id: UUID
+    amount_owed: Decimal
+    is_settled: bool
+    settled_at: Optional[datetime] = None
+    created_at: datetime
+    # User details (populated from join)
+    user_email: Optional[str] = None
+    user_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
 
 
 # Expense schemas
 class ExpenseCreate(BaseModel):
     """Schema for creating an expense."""
 
-    household_id: UUID = Field(..., description="Household ID")
-    title: str = Field(..., min_length=1, max_length=200, description="Expense title")
-    description: Optional[str] = Field(None, max_length=2000, description="Expense description")
-    amount: Decimal = Field(..., gt=0, description="Expense amount")
-    category: Optional[str] = Field(None, max_length=100, description="Expense category (AI will suggest if not provided)")
-    subcategory: Optional[str] = Field(None, max_length=100, description="Expense subcategory")
-    tags: Optional[List[str]] = Field(None, description="Tags for filtering")
-    expense_date: datetime = Field(..., description="Date of expense")
-    paid_by_id: Optional[UUID] = Field(None, description="User ID who paid")
-    split_type: Optional[str] = Field(None, description="Split type: equal, percentage, custom")
-    split_data: Optional[Dict[str, Any]] = Field(None, description="Split details")
-    use_ai_categorization: bool = Field(True, description="Whether to use AI for categorization")
+    household_id: UUID
+    amount: Decimal = Field(..., gt=0, description="Total expense amount")
+    description: str = Field(..., min_length=1, max_length=500, description="Expense description")
+    category: ExpenseCategory = ExpenseCategory.OTHER
+    payment_method: PaymentMethod = PaymentMethod.CASH
+    date: Optional[datetime] = None
+    split_type: SplitType = SplitType.EQUAL
+    is_personal: bool = False
+    splits: Optional[List[ExpenseSplitCreate]] = Field(
+        None, description="Custom splits (required for custom/percentage split types)"
+    )
 
 
 class ExpenseUpdate(BaseModel):
     """Schema for updating an expense."""
 
-    title: Optional[str] = Field(None, min_length=1, max_length=200, description="Expense title")
-    description: Optional[str] = Field(None, max_length=2000, description="Expense description")
-    amount: Optional[Decimal] = Field(None, gt=0, description="Expense amount")
-    category: Optional[str] = Field(None, max_length=100, description="Expense category")
-    subcategory: Optional[str] = Field(None, max_length=100, description="Expense subcategory")
-    tags: Optional[List[str]] = Field(None, description="Tags for filtering")
-    expense_date: Optional[datetime] = Field(None, description="Date of expense")
-    paid_by_id: Optional[UUID] = Field(None, description="User ID who paid")
-    split_type: Optional[str] = Field(None, description="Split type: equal, percentage, custom")
-    split_data: Optional[Dict[str, Any]] = Field(None, description="Split details")
+    amount: Optional[Decimal] = Field(None, gt=0, description="Total expense amount")
+    description: Optional[str] = Field(None, min_length=1, max_length=500)
+    category: Optional[ExpenseCategory] = None
+    payment_method: Optional[PaymentMethod] = None
+    date: Optional[datetime] = None
 
 
 class ExpenseResponse(BaseModel):
-    """Response schema for expense operations."""
+    """Schema for expense response."""
 
     id: UUID
     household_id: UUID
-    title: str
-    description: Optional[str] = None
-    amount: Decimal
-    category: str
-    subcategory: Optional[str] = None
-    tags: Optional[List[str]] = None
-    ai_categorized: bool = False
-    ai_confidence: Optional[Decimal] = None
-    ai_reasoning: Optional[str] = None
-    receipt_url: Optional[str] = None
-    receipt_data: Optional[Dict[str, Any]] = None
-    expense_date: datetime
-    paid_by_id: Optional[UUID] = None
     created_by: UUID
-    split_type: Optional[str] = None
-    split_data: Optional[Dict[str, Any]] = None
+    amount: Decimal
+    description: str
+    category: ExpenseCategory
+    payment_method: PaymentMethod
+    date: datetime
+    split_type: SplitType
+    is_personal: bool
     created_at: datetime
     updated_at: datetime
+    # Creator details
+    creator_name: Optional[str] = None
+    creator_email: Optional[str] = None
 
-    model_config = {"from_attributes": True}
-
-
-class ExpenseWithDetails(ExpenseResponse):
-    """Expense response with user details."""
-
-    paid_by_name: Optional[str] = None
-    paid_by_email: Optional[str] = None
-    created_by_name: Optional[str] = None
-    created_by_email: Optional[str] = None
+    class Config:
+        from_attributes = True
 
 
-class ExpenseStats(BaseModel):
-    """Statistics for expenses."""
+class ExpenseWithSplits(BaseModel):
+    """Schema for expense with splits details."""
 
-    total_expenses: int
-    total_amount: Decimal
-    category_breakdown: Dict[str, Decimal]
-    monthly_total: Decimal
-    user_balances: Optional[Dict[str, Decimal]] = None
-
-
-class AICategorizeRequest(BaseModel):
-    """Request schema for AI categorization."""
-
-    description: str = Field(..., min_length=1, max_length=500, description="Expense description")
-    amount: Decimal = Field(..., gt=0, description="Expense amount")
-    context: Optional[str] = Field(None, max_length=500, description="Additional context")
-
-
-class AICategorizeResponse(BaseModel):
-    """Response schema for AI categorization."""
-
-    category: str
-    subcategory: Optional[str] = None
-    confidence: float
-    reasoning: str
-    suggested_tags: List[str]
-
-
-class ReceiptOCRResponse(BaseModel):
-    """Response schema for receipt OCR."""
-
-    success: bool
-    merchant: Optional[str] = None
-    date: Optional[str] = None
-    total: Optional[Decimal] = None
-    currency: Optional[str] = None
-    items: Optional[List[Dict[str, Any]]] = None
-    tax: Optional[Decimal] = None
-    payment_method: Optional[str] = None
-    confidence: Optional[float] = None
-    notes: Optional[str] = None
-    error: Optional[str] = None
-
-
-class TaskSuggestion(BaseModel):
-    """Schema for AI task suggestions."""
-
-    title: str
+    id: UUID
+    household_id: UUID
+    created_by: UUID
+    amount: Decimal
     description: str
-    priority: str  # low, medium, high
-    category: str
-    reasoning: str
+    category: ExpenseCategory
+    payment_method: PaymentMethod
+    date: datetime
+    split_type: SplitType
+    is_personal: bool
+    created_at: datetime
+    updated_at: datetime
+    # Creator details
+    creator_name: Optional[str] = None
+    creator_email: Optional[str] = None
+    # Splits
+    splits: List[ExpenseSplitResponse]
+
+    class Config:
+        from_attributes = True
 
 
-class TaskSuggestionsResponse(BaseModel):
-    """Response schema for task suggestions."""
+# Settlement schemas
+class SettleExpenseRequest(BaseModel):
+    """Schema for settling expense splits."""
 
-    suggestions: List[TaskSuggestion]
-    count: int
+    split_ids: List[UUID] = Field(..., min_length=1, description="IDs of splits to settle")
+
+
+class SettlementResponse(BaseModel):
+    """Schema for settlement operation response."""
+
+    settled_count: int
+    split_ids: List[UUID]
+    message: str
+
+
+# Summary/Analytics schemas
+class UserBalance(BaseModel):
+    """Schema for user balance in household."""
+
+    user_id: UUID
+    user_name: str
+    user_email: str
+    total_paid: Decimal  # Total amount this user paid for expenses
+    total_owed: Decimal  # Total amount this user owes to others
+    balance: Decimal  # Net balance (positive = owed to user, negative = user owes)
+
+
+class ExpenseSummary(BaseModel):
+    """Schema for household expense summary."""
+
+    household_id: UUID
+    total_expenses: Decimal
+    total_settled: Decimal
+    total_pending: Decimal
+    expense_count: int
+    user_balances: List[UserBalance]
+
+
+class MonthlyExpenseStats(BaseModel):
+    """Schema for monthly expense statistics."""
+
+    year: int
+    month: int
+    total_amount: Decimal
+    expense_count: int
+    category_breakdown: dict[ExpenseCategory, Decimal]
+    average_expense: Decimal
+
+
+class PersonalExpenseAnalytics(BaseModel):
+    """Schema for personal expense analytics."""
+
+    user_id: UUID
+    household_id: Optional[UUID] = None
+    period_start: datetime
+    period_end: datetime
+    total_spent: Decimal
+    total_paid_for_others: Decimal
+    total_owed_by_user: Decimal
+    net_balance: Decimal
+    expense_count: int
+    category_breakdown: dict[ExpenseCategory, Decimal]
+    monthly_stats: List[MonthlyExpenseStats]

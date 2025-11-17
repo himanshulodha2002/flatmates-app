@@ -154,110 +154,266 @@ export interface TodoStats {
   total: number;
 }
 
-// Expense types
-export interface Expense {
+// Shopping List types
+export enum ShoppingListStatus {
+  ACTIVE = 'active',
+  ARCHIVED = 'archived',
+}
+
+export interface ItemCategory {
+  id: string;
+  name: string;
+  icon?: string;
+  color?: string;
+  household_id?: string;
+  created_at: string;
+}
+
+export interface ShoppingList {
   id: string;
   household_id: string;
-  title: string;
+  name: string;
   description?: string;
-  amount: string; // Decimal as string
-  category: string;
-  subcategory?: string;
-  tags?: string[];
-  ai_categorized: boolean;
-  ai_confidence?: string; // Decimal as string
-  ai_reasoning?: string;
-  receipt_url?: string;
-  receipt_data?: any;
-  expense_date: string;
-  paid_by_id?: string;
+  status: ShoppingListStatus;
   created_by: string;
-  split_type?: string;
-  split_data?: any;
   created_at: string;
   updated_at: string;
 }
 
-export interface ExpenseWithDetails extends Expense {
-  paid_by_name?: string;
-  paid_by_email?: string;
+export interface ShoppingListItem {
+  id: string;
+  shopping_list_id: string;
+  name: string;
+  quantity: number;
+  unit?: string;
+  category?: string;
+  is_purchased: boolean;
+  assigned_to_id?: string;
+  price?: number;
+  notes?: string;
+  is_recurring: boolean;
+  recurring_pattern?: string;
+  recurring_until?: string;
+  last_recurring_date?: string;
+  checked_off_by?: string;
+  checked_off_at?: string;
+  position: number;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ShoppingListItemWithDetails extends ShoppingListItem {
+  assigned_to_name?: string;
+  assigned_to_email?: string;
+  checked_off_by_name?: string;
   created_by_name: string;
   created_by_email: string;
 }
 
-export interface ExpenseCreateRequest {
+export interface ShoppingListWithItems {
+  id: string;
   household_id: string;
-  title: string;
+  name: string;
   description?: string;
-  amount: number | string;
-  category?: string;
-  subcategory?: string;
-  tags?: string[];
-  expense_date: string;
-  paid_by_id?: string;
-  split_type?: string;
-  split_data?: any;
-  use_ai_categorization?: boolean;
+  status: ShoppingListStatus;
+  created_by: string;
+  created_by_name: string;
+  created_by_email: string;
+  created_at: string;
+  updated_at: string;
+  items: ShoppingListItemWithDetails[];
 }
 
-export interface ExpenseUpdateRequest {
-  title?: string;
+export interface ShoppingListCreateRequest {
+  household_id: string;
+  name: string;
   description?: string;
-  amount?: number | string;
+}
+
+export interface ShoppingListUpdateRequest {
+  name?: string;
+  description?: string;
+  status?: ShoppingListStatus;
+}
+
+export interface ShoppingListItemCreateRequest {
+  name: string;
+  quantity?: number;
+  unit?: string;
   category?: string;
-  subcategory?: string;
-  tags?: string[];
-  expense_date?: string;
-  paid_by_id?: string;
-  split_type?: string;
-  split_data?: any;
-}
-
-export interface ExpenseStats {
-  total_expenses: number;
-  total_amount: string; // Decimal as string
-  category_breakdown: Record<string, string>;
-  monthly_total: string; // Decimal as string
-  user_balances?: Record<string, string>;
-}
-
-export interface AICategorizeRequest {
-  description: string;
-  amount: number | string;
-  context?: string;
-}
-
-export interface AICategorizeResponse {
-  category: string;
-  subcategory?: string;
-  confidence: number;
-  reasoning: string;
-  suggested_tags: string[];
-}
-
-export interface ReceiptOCRResponse {
-  success: boolean;
-  merchant?: string;
-  date?: string;
-  total?: string;
-  currency?: string;
-  items?: Array<{ description: string; amount: number }>;
-  tax?: string;
-  payment_method?: string;
-  confidence?: number;
+  assigned_to_id?: string;
+  price?: number;
   notes?: string;
-  error?: string;
+  is_recurring?: boolean;
+  recurring_pattern?: string;
+  recurring_until?: string;
+  position?: number;
 }
 
-export interface TaskSuggestion {
-  title: string;
+export interface ShoppingListItemUpdateRequest {
+  name?: string;
+  quantity?: number;
+  unit?: string;
+  category?: string;
+  is_purchased?: boolean;
+  assigned_to_id?: string;
+  price?: number;
+  notes?: string;
+  is_recurring?: boolean;
+  recurring_pattern?: string;
+  recurring_until?: string;
+  position?: number;
+}
+
+export interface ShoppingListItemPurchaseUpdateRequest {
+  is_purchased: boolean;
+}
+
+export interface ShoppingListStats {
+  total_items: number;
+  purchased_items: number;
+  pending_items: number;
+  total_price?: number;
+  categories: Record<string, number>;
+}
+
+export interface ItemCategoryCreateRequest {
+  name: string;
+  icon?: string;
+  color?: string;
+  household_id?: string;
+}
+
+// Expense types
+export enum ExpenseCategory {
+  GROCERIES = 'groceries',
+  UTILITIES = 'utilities',
+  RENT = 'rent',
+  INTERNET = 'internet',
+  CLEANING = 'cleaning',
+  MAINTENANCE = 'maintenance',
+  ENTERTAINMENT = 'entertainment',
+  FOOD = 'food',
+  TRANSPORTATION = 'transportation',
+  OTHER = 'other',
+}
+
+export enum SplitType {
+  EQUAL = 'equal',
+  CUSTOM = 'custom',
+  PERCENTAGE = 'percentage',
+}
+
+export enum PaymentMethod {
+  CASH = 'cash',
+  CARD = 'card',
+  BANK_TRANSFER = 'bank_transfer',
+  DIGITAL_WALLET = 'digital_wallet',
+  OTHER = 'other',
+}
+
+export interface ExpenseSplit {
+  id: string;
+  expense_id: string;
+  user_id: string;
+  amount_owed: number;
+  is_settled: boolean;
+  settled_at?: string;
+  created_at: string;
+  user_email?: string;
+  user_name?: string;
+}
+
+export interface Expense {
+  id: string;
+  household_id: string;
+  created_by: string;
+  amount: number;
   description: string;
-  priority: string;
-  category: string;
-  reasoning: string;
+  category: ExpenseCategory;
+  payment_method: PaymentMethod;
+  date: string;
+  split_type: SplitType;
+  is_personal: boolean;
+  created_at: string;
+  updated_at: string;
+  creator_name?: string;
+  creator_email?: string;
 }
 
-export interface TaskSuggestionsResponse {
-  suggestions: TaskSuggestion[];
-  count: number;
+export interface ExpenseWithSplits extends Expense {
+  splits: ExpenseSplit[];
+}
+
+export interface ExpenseCreate {
+  household_id: string;
+  amount: number;
+  description: string;
+  category?: ExpenseCategory;
+  payment_method?: PaymentMethod;
+  date?: string;
+  split_type?: SplitType;
+  is_personal?: boolean;
+  splits?: Array<{
+    user_id: string;
+    amount_owed: number;
+  }>;
+}
+
+export interface ExpenseUpdate {
+  amount?: number;
+  description?: string;
+  category?: ExpenseCategory;
+  payment_method?: PaymentMethod;
+  date?: string;
+}
+
+export interface UserBalance {
+  user_id: string;
+  user_name: string;
+  user_email: string;
+  total_paid: number;
+  total_owed: number;
+  balance: number;
+}
+
+export interface ExpenseSummary {
+  household_id: string;
+  total_expenses: number;
+  total_settled: number;
+  total_pending: number;
+  expense_count: number;
+  user_balances: UserBalance[];
+}
+
+export interface MonthlyExpenseStats {
+  year: number;
+  month: number;
+  total_amount: number;
+  expense_count: number;
+  category_breakdown: Record<ExpenseCategory, number>;
+  average_expense: number;
+}
+
+export interface PersonalExpenseAnalytics {
+  user_id: string;
+  household_id?: string;
+  period_start: string;
+  period_end: string;
+  total_spent: number;
+  total_paid_for_others: number;
+  total_owed_by_user: number;
+  net_balance: number;
+  expense_count: number;
+  category_breakdown: Record<ExpenseCategory, number>;
+  monthly_stats: MonthlyExpenseStats[];
+}
+
+export interface ExpenseState {
+  expenses: Expense[];
+  currentExpense: ExpenseWithSplits | null;
+  summary: ExpenseSummary | null;
+  analytics: PersonalExpenseAnalytics | null;
+  loading: boolean;
 }

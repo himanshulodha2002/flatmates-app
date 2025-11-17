@@ -10,5 +10,38 @@ from app.models.household import (
     MemberRole,
     InviteStatus,
 )
+from app.models.todo import Todo, TodoStatus, TodoPriority
+from app.models.expense import (
+    Expense,
+    ExpenseSplit,
+    ExpenseCategory,
+    SplitType,
+    PaymentMethod,
+)
+from app.models.shopping import (
+    ShoppingList,
+    ShoppingListItem,
+    ItemCategory,
+    ShoppingListStatus,
+)
 
-__all__ = ["User", "Household", "HouseholdMember", "HouseholdInvite", "MemberRole", "InviteStatus"]
+__all__ = [
+    "User",
+    "Household",
+    "HouseholdMember",
+    "HouseholdInvite",
+    "MemberRole",
+    "InviteStatus",
+    "Todo",
+    "TodoStatus",
+    "TodoPriority",
+    "Expense",
+    "ExpenseSplit",
+    "ExpenseCategory",
+    "SplitType",
+    "PaymentMethod",
+    "ShoppingList",
+    "ShoppingListItem",
+    "ItemCategory",
+    "ShoppingListStatus",
+]
