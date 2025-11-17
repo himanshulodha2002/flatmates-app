@@ -1,6 +1,7 @@
 """
 Pydantic schemas for authentication.
 """
+
 from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, UUID4
@@ -8,7 +9,7 @@ from pydantic import BaseModel, UUID4
 
 class UserResponse(BaseModel):
     """Schema for user response."""
-    
+
     id: UUID4
     email: str
     full_name: str
@@ -24,7 +25,7 @@ class UserResponse(BaseModel):
 
 class TokenResponse(BaseModel):
     """Schema for token response."""
-    
+
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
@@ -32,5 +33,5 @@ class TokenResponse(BaseModel):
 
 class GoogleTokenRequest(BaseModel):
     """Schema for Google token request."""
-    
+
     id_token: str
