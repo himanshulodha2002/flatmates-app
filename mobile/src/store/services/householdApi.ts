@@ -48,6 +48,12 @@ export const householdApi = api.injectEndpoints({
       providesTags: (result, error, id) => [{ type: 'Household', id }],
     }),
 
+    // List household invites
+    listInvites: builder.query<HouseholdInvite[], string>({
+      query: (householdId) => `/households/${householdId}/invites`,
+      providesTags: (result, error, id) => [{ type: 'Household', id: `${id}-invites` }],
+    }),
+
     // Create invite
     createInvite: builder.mutation<HouseholdInvite, { householdId: string; data: InviteRequest }>({
       query: ({ householdId, data }) => ({
@@ -55,6 +61,20 @@ export const householdApi = api.injectEndpoints({
         method: 'POST',
         body: data,
       }),
+      invalidatesTags: (result, error, { householdId }) => [
+        { type: 'Household', id: `${householdId}-invites` },
+      ],
+    }),
+
+    // Cancel invite
+    cancelInvite: builder.mutation<void, { householdId: string; inviteId: string }>({
+      query: ({ householdId, inviteId }) => ({
+        url: `/households/${householdId}/invites/${inviteId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (result, error, { householdId }) => [
+        { type: 'Household', id: `${householdId}-invites` },
+      ],
     }),
 
     // Join household via invite token
@@ -63,6 +83,15 @@ export const householdApi = api.injectEndpoints({
         url: '/households/join',
         method: 'POST',
         body: data,
+      }),
+      invalidatesTags: ['Household'],
+    }),
+
+    // Leave household
+    leaveHousehold: builder.mutation<void, string>({
+      query: (householdId) => ({
+        url: `/households/${householdId}/leave`,
+        method: 'POST',
       }),
       invalidatesTags: ['Household'],
     }),
@@ -96,8 +125,11 @@ export const {
   useCreateHouseholdMutation,
   useGetMyHouseholdsQuery,
   useGetHouseholdDetailsQuery,
+  useListInvitesQuery,
   useCreateInviteMutation,
+  useCancelInviteMutation,
   useJoinHouseholdMutation,
+  useLeaveHouseholdMutation,
   useUpdateMemberRoleMutation,
   useRemoveMemberMutation,
 } = householdApi;
