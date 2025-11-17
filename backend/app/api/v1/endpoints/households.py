@@ -117,7 +117,20 @@ def create_household(
     """
     Create a new household.
     Current user becomes the owner.
+
+    Note: Each user can only be in one household at a time.
     """
+    # Check if user is already in a household
+    existing_membership = (
+        db.query(HouseholdMember).filter(HouseholdMember.user_id == current_user.id).first()
+    )
+
+    if existing_membership:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You are already in a household. Please leave your current household first.",
+        )
+
     # Create household
     household = Household(name=household_data.name, created_by=current_user.id)
     db.add(household)
@@ -204,6 +217,41 @@ def get_household_details(
     )
 
 
+@router.get("/{household_id}/invites", response_model=List[InviteResponse])
+def list_invites(
+    household_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    _: Household = Depends(get_current_household),
+):
+    """
+    List all pending invites for a household.
+    Any member can view invites.
+    """
+    invites = (
+        db.query(HouseholdInvite)
+        .filter(
+            HouseholdInvite.household_id == household_id,
+            HouseholdInvite.status == InviteStatus.PENDING,
+            HouseholdInvite.expires_at > datetime.utcnow(),
+        )
+        .all()
+    )
+
+    return [
+        InviteResponse(
+            id=invite.id,
+            household_id=invite.household_id,
+            email=invite.email,
+            token=invite.token,
+            status=invite.status,
+            expires_at=invite.expires_at,
+            created_at=invite.created_at,
+        )
+        for invite in invites
+    ]
+
+
 @router.post("/{household_id}/invite", response_model=InviteResponse)
 def create_invite(
     household_id: uuid.UUID,
@@ -233,6 +281,24 @@ def create_invite(
                 detail="User is already a member of this household",
             )
 
+    # Check if there's already a pending invite for this email
+    existing_invite = (
+        db.query(HouseholdInvite)
+        .filter(
+            HouseholdInvite.household_id == household_id,
+            HouseholdInvite.email == invite_data.email,
+            HouseholdInvite.status == InviteStatus.PENDING,
+            HouseholdInvite.expires_at > datetime.utcnow(),
+        )
+        .first()
+    )
+
+    if existing_invite:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="An active invite already exists for this email",
+        )
+
     # Generate unique token
     token = secrets.token_urlsafe(32)
 
@@ -260,6 +326,43 @@ def create_invite(
     )
 
 
+@router.delete("/{household_id}/invites/{invite_id}", status_code=status.HTTP_204_NO_CONTENT)
+def cancel_invite(
+    household_id: uuid.UUID,
+    invite_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    _: HouseholdMember = Depends(check_owner_permission),
+):
+    """
+    Cancel a pending invite.
+    Only owners can cancel invites.
+    """
+    invite = (
+        db.query(HouseholdInvite)
+        .filter(
+            HouseholdInvite.id == invite_id,
+            HouseholdInvite.household_id == household_id,
+        )
+        .first()
+    )
+
+    if not invite:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invite not found")
+
+    if invite.status != InviteStatus.PENDING:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Can only cancel pending invites",
+        )
+
+    # Mark as expired instead of deleting for audit trail
+    invite.status = InviteStatus.EXPIRED
+    db.commit()
+
+    return None
+
+
 @router.post("/join", response_model=HouseholdResponse)
 def join_household(
     join_data: JoinHouseholdRequest,
@@ -268,7 +371,20 @@ def join_household(
 ):
     """
     Join a household using an invite token.
+
+    Note: Each user can only be in one household at a time.
     """
+    # Check if user is already in any household
+    existing_membership = (
+        db.query(HouseholdMember).filter(HouseholdMember.user_id == current_user.id).first()
+    )
+
+    if existing_membership:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You are already in a household. Please leave your current household first.",
+        )
+
     # Find invite
     invite = db.query(HouseholdInvite).filter(HouseholdInvite.token == join_data.token).first()
 
@@ -292,22 +408,6 @@ def join_household(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="This invite is for a different email address",
-        )
-
-    # Check if already a member
-    existing_member = (
-        db.query(HouseholdMember)
-        .filter(
-            HouseholdMember.user_id == current_user.id,
-            HouseholdMember.household_id == invite.household_id,
-        )
-        .first()
-    )
-
-    if existing_member:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You are already a member of this household",
         )
 
     # Add user as member
@@ -434,4 +534,74 @@ def remove_member(
     db.delete(member)
     db.commit()
 
+    return None
+
+
+@router.post("/{household_id}/leave", status_code=status.HTTP_204_NO_CONTENT)
+def leave_household(
+    household_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Leave the household.
+    If you are the last owner, you cannot leave (must delete household or transfer ownership first).
+    """
+    # Get current user's membership
+    member = (
+        db.query(HouseholdMember)
+        .filter(
+            HouseholdMember.user_id == current_user.id,
+            HouseholdMember.household_id == household_id,
+        )
+        .first()
+    )
+
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="You are not a member of this household",
+        )
+
+    # Check if user is the last owner
+    if member.role == MemberRole.OWNER:
+        owner_count = (
+            db.query(HouseholdMember)
+            .filter(
+                HouseholdMember.household_id == household_id,
+                HouseholdMember.role == MemberRole.OWNER,
+            )
+            .count()
+        )
+
+        if owner_count <= 1:
+            # Check if there are other members who could become owner
+            total_members = (
+                db.query(HouseholdMember)
+                .filter(HouseholdMember.household_id == household_id)
+                .count()
+            )
+
+            if total_members > 1:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="You are the last owner. Please transfer ownership to another member before leaving.",
+                )
+
+    # Remove membership
+    db.delete(member)
+
+    # If this was the last member, delete the household
+    remaining_members = (
+        db.query(HouseholdMember)
+        .filter(HouseholdMember.household_id == household_id)
+        .count()
+    )
+
+    if remaining_members == 0:
+        household = db.query(Household).filter(Household.id == household_id).first()
+        if household:
+            db.delete(household)
+
+    db.commit()
     return None
