@@ -11,6 +11,9 @@ import { PaperProvider } from 'react-native-paper';
 
 import { store, persistor } from '../src/store';
 import { theme } from '../src/theme/theme';
+import { useNotifications } from '../src/hooks/useNotifications';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useState } from 'react';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -62,23 +65,53 @@ function RootLayoutNav() {
   const { useSelector } = require('react-redux');
   const { selectIsAuthenticated } = require('../src/store/slices/authSlice');
   const isAuthenticated = useSelector(selectIsAuthenticated);
+  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
+
+  // Initialize push notifications
+  const { permissionStatus, requestPermissions } = useNotifications();
+
+  // Check if onboarding is completed
+  useEffect(() => {
+    const checkOnboarding = async () => {
+      const completed = await AsyncStorage.getItem('onboarding_completed');
+      setOnboardingCompleted(completed === 'true');
+    };
+    checkOnboarding();
+  }, []);
 
   useEffect(() => {
+    if (onboardingCompleted === null) return; // Wait for onboarding check
+
     const inAuthGroup = segments[0] === '(tabs)';
+    const onOnboardingScreen = segments[0] === 'onboarding';
+
+    // First time users should see onboarding
+    if (!onboardingCompleted && !onOnboardingScreen && !isAuthenticated) {
+      router.replace('/onboarding');
+      return;
+    }
 
     if (!isAuthenticated && inAuthGroup) {
       // Redirect to login if not authenticated and trying to access protected routes
       router.replace('/login');
-    } else if (isAuthenticated && !inAuthGroup) {
+    } else if (isAuthenticated && !inAuthGroup && !onOnboardingScreen) {
       // Redirect to tabs if authenticated and on login screen
       router.replace('/(tabs)');
     }
-  }, [isAuthenticated, segments]);
+  }, [isAuthenticated, segments, onboardingCompleted]);
+
+  // Request notification permissions when authenticated
+  useEffect(() => {
+    if (isAuthenticated && permissionStatus === 'undetermined') {
+      requestPermissions();
+    }
+  }, [isAuthenticated, permissionStatus]);
 
   return (
     <PaperProvider theme={theme}>
       <ThemeProvider value={DarkTheme}>
         <Stack>
+          <Stack.Screen name="onboarding" options={{ headerShown: false }} />
           <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen

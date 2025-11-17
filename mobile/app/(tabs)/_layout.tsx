@@ -2,12 +2,14 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from 'react-native-paper';
+import { ErrorBoundary } from '../../src/components/ErrorBoundary';
 
 export default function TabLayout() {
   const theme = useTheme();
 
   return (
-    <Tabs
+    <ErrorBoundary>
+      <Tabs
       screenOptions={{
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.onSurfaceVariant,
@@ -67,5 +69,6 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    </ErrorBoundary>
   );
 }
