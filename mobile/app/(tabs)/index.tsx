@@ -2,12 +2,14 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Surface, Text, Card, useTheme } from 'react-native-paper';
+import { OfflineBanner } from '@/components/OfflineBanner';
 
 export default function HomeScreen() {
   const theme = useTheme();
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <OfflineBanner />
       <View style={styles.content}>
         <Surface style={styles.surface} elevation={1}>
           <Text variant="displaySmall" style={styles.title}>
