@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Surface, Text, Card, Button, Avatar, useTheme } from 'react-native-paper';
+import { Surface, Text, Card, Button, Avatar, useTheme, Chip } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { useSelector, useDispatch } from 'react-redux';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
@@ -10,7 +10,9 @@ import {
   selectIsAuthenticated,
   clearCredentials,
 } from '@/store/slices/authSlice';
+import { clearHouseholdData } from '@/store/slices/householdSlice';
 import { useLogoutMutation } from '@/store/services/authApi';
+import { disableOfflineMode, isOfflineModeEnabled } from '@/utils/offlineMode';
 
 export default function ProfileScreen() {
   const theme = useTheme();
@@ -19,6 +21,15 @@ export default function ProfileScreen() {
   const user = useSelector(selectCurrentUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const [logout, { isLoading }] = useLogoutMutation();
+  const [isOffline, setIsOffline] = useState(false);
+
+  useEffect(() => {
+    const checkOfflineMode = async () => {
+      const offline = await isOfflineModeEnabled();
+      setIsOffline(offline);
+    };
+    checkOfflineMode();
+  }, []);
 
   const handleLogout = async () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
@@ -31,6 +42,15 @@ export default function ProfileScreen() {
         style: 'destructive',
         onPress: async () => {
           try {
+            // If in offline mode, just clear local data
+            if (isOffline) {
+              await disableOfflineMode();
+              dispatch(clearCredentials());
+              dispatch(clearHouseholdData());
+              router.replace('/login');
+              return;
+            }
+
             // Call backend logout endpoint
             await logout().unwrap();
 
@@ -39,6 +59,7 @@ export default function ProfileScreen() {
 
             // Clear Redux state
             dispatch(clearCredentials());
+            dispatch(clearHouseholdData());
 
             // Navigate to login
             router.replace('/login');
@@ -46,6 +67,7 @@ export default function ProfileScreen() {
             console.error('Logout error:', error);
             // Even if backend call fails, clear local state
             dispatch(clearCredentials());
+            dispatch(clearHouseholdData());
             await GoogleSignin.signOut().catch(() => {});
             router.replace('/login');
           }
@@ -83,6 +105,11 @@ export default function ProfileScreen() {
           <Text variant="bodyMedium" style={styles.email}>
             {user.email}
           </Text>
+          {isOffline && (
+            <Chip icon="wifi-off" style={styles.offlineChip}>
+              Offline Mode
+            </Chip>
+          )}
         </Surface>
 
         <Card style={styles.card}>
@@ -164,6 +191,10 @@ const styles = StyleSheet.create({
   email: {
     textAlign: 'center',
     opacity: 0.7,
+  },
+  offlineChip: {
+    marginTop: 12,
+    backgroundColor: '#FFC107',
   },
   card: {
     marginBottom: 16,

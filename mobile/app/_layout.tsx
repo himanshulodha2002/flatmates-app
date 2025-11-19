@@ -62,10 +62,14 @@ function RootLayoutNav() {
   const { useRouter, useSegments } = require('expo-router');
   const router = useRouter();
   const segments = useSegments();
-  const { useSelector } = require('react-redux');
+  const { useSelector, useDispatch } = require('react-redux');
   const { selectIsAuthenticated } = require('../src/store/slices/authSlice');
+  const { setCredentials } = require('../src/store/slices/authSlice');
+  const { setActiveHousehold, setCurrentHousehold } = require('../src/store/slices/householdSlice');
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
+  const [offlineModeChecked, setOfflineModeChecked] = useState(false);
+  const dispatch = useDispatch();
 
   // Initialize push notifications
   const { permissionStatus, requestPermissions } = useNotifications();
@@ -79,11 +83,42 @@ function RootLayoutNav() {
     checkOnboarding();
   }, []);
 
+  // Check and restore offline mode on app start
   useEffect(() => {
-    if (onboardingCompleted === null) return; // Wait for onboarding check
+    const restoreOfflineMode = async () => {
+      try {
+        const { isOfflineModeEnabled, getOfflineUser, getOfflineHousehold } = require('../src/utils/offlineMode');
+        const offlineEnabled = await isOfflineModeEnabled();
+
+        if (offlineEnabled && !isAuthenticated) {
+          console.log('Restoring offline mode...');
+          const user = await getOfflineUser();
+          const household = await getOfflineHousehold();
+
+          if (user && household) {
+            // Restore user and household to Redux
+            dispatch(setCredentials({ user, token: 'offline' }));
+            dispatch(setActiveHousehold(household.id));
+            dispatch(setCurrentHousehold(household));
+            console.log('Offline mode restored');
+          }
+        }
+      } catch (error) {
+        console.error('Error restoring offline mode:', error);
+      } finally {
+        setOfflineModeChecked(true);
+      }
+    };
+
+    restoreOfflineMode();
+  }, []);
+
+  useEffect(() => {
+    if (onboardingCompleted === null || !offlineModeChecked) return; // Wait for checks
 
     const inAuthGroup = segments[0] === '(tabs)';
     const onOnboardingScreen = segments[0] === 'onboarding';
+    const onLoginScreen = segments[0] === 'login';
 
     // First time users should see onboarding
     if (!onboardingCompleted && !onOnboardingScreen && !isAuthenticated) {
@@ -94,11 +129,11 @@ function RootLayoutNav() {
     if (!isAuthenticated && inAuthGroup) {
       // Redirect to login if not authenticated and trying to access protected routes
       router.replace('/login');
-    } else if (isAuthenticated && !inAuthGroup && !onOnboardingScreen) {
-      // Redirect to tabs if authenticated and on login screen
+    } else if (isAuthenticated && !inAuthGroup && !onOnboardingScreen && !onLoginScreen) {
+      // Redirect to tabs if authenticated and not already on tabs/onboarding/login
       router.replace('/(tabs)');
     }
-  }, [isAuthenticated, segments, onboardingCompleted]);
+  }, [isAuthenticated, segments, onboardingCompleted, offlineModeChecked]);
 
   // Request notification permissions when authenticated
   useEffect(() => {
