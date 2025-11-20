@@ -10,11 +10,18 @@ from typing import Generator
 
 from app.core.config import settings
 
+# Detect sqlite and pass special connect_args required for SQLite in multithreaded
+# environments (e.g., dev server). For SQLite URLs, set check_same_thread=False.
+connect_args = {}
+if settings.DATABASE_URL.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
+
 # Create SQLAlchemy engine
 engine = create_engine(
     settings.DATABASE_URL,
     pool_pre_ping=True,  # Verify connections before using
     echo=False,  # Set to True for SQL query logging during development
+    connect_args=connect_args,
 )
 
 # Create SessionLocal class for database sessions

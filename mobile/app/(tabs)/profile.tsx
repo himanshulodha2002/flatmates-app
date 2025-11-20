@@ -1,18 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Surface, Text, Card, Button, Avatar, useTheme, Chip } from 'react-native-paper';
-import { useRouter } from 'expo-router';
-import { useSelector, useDispatch } from 'react-redux';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { useLogoutMutation } from '@/store/services/authApi';
 import {
-  selectCurrentUser,
-  selectIsAuthenticated,
-  clearCredentials,
+    clearCredentials,
+    selectCurrentUser,
+    selectIsAuthenticated,
 } from '@/store/slices/authSlice';
 import { clearHouseholdData } from '@/store/slices/householdSlice';
-import { useLogoutMutation } from '@/store/services/authApi';
 import { disableOfflineMode, isOfflineModeEnabled } from '@/utils/offlineMode';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { Alert, Platform, StyleSheet, View } from 'react-native';
+import { Avatar, Button, Card, Chip, Surface, Text, useTheme } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useDispatch, useSelector } from 'react-redux';
 
 export default function ProfileScreen() {
   const theme = useTheme();
@@ -54,8 +53,11 @@ export default function ProfileScreen() {
             // Call backend logout endpoint
             await logout().unwrap();
 
-            // Sign out from Google
-            await GoogleSignin.signOut();
+            // Sign out from Google (native only)
+            if (Platform.OS !== 'web') {
+              const { GoogleSignin } = await import('@react-native-google-signin/google-signin');
+              await GoogleSignin.signOut();
+            }
 
             // Clear Redux state
             dispatch(clearCredentials());
@@ -68,7 +70,11 @@ export default function ProfileScreen() {
             // Even if backend call fails, clear local state
             dispatch(clearCredentials());
             dispatch(clearHouseholdData());
-            await GoogleSignin.signOut().catch(() => {});
+            if (Platform.OS !== 'web') {
+              await import('@react-native-google-signin/google-signin')
+                .then(({ GoogleSignin }) => GoogleSignin.signOut())
+                .catch(() => {});
+            }
             router.replace('/login');
           }
         },

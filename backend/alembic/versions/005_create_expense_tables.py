@@ -12,32 +12,17 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '004'
-down_revision: Union[str, None] = '003'
+revision: str = '005'
+down_revision: Union[str, None] = '004'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Create expense category enum
-    op.execute("""
-        CREATE TYPE expensecategory AS ENUM (
-            'groceries', 'utilities', 'rent', 'internet', 'cleaning',
-            'maintenance', 'entertainment', 'food', 'transportation', 'other'
-        )
-    """)
-
-    # Create split type enum
-    op.execute("""
-        CREATE TYPE splittype AS ENUM ('equal', 'custom', 'percentage')
-    """)
-
-    # Create payment method enum
-    op.execute("""
-        CREATE TYPE paymentmethod AS ENUM (
-            'cash', 'card', 'bank_transfer', 'digital_wallet', 'other'
-        )
-    """)
+    # Drop types if they exist to avoid duplicates during re-runs
+    op.execute("DROP TYPE IF EXISTS expensecategory CASCADE")
+    op.execute("DROP TYPE IF EXISTS splittype CASCADE")
+    op.execute("DROP TYPE IF EXISTS paymentmethod CASCADE")
 
     # Create expenses table
     op.create_table(
