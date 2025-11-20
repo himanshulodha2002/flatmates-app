@@ -6,6 +6,8 @@ import type { RootState } from '../index';
 // Example: EXPO_PUBLIC_API_URL=http://192.168.1.100:8000/api/v1
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
+console.log('API Base URL:', BASE_URL);
+
 // Create a base query with auth token injection and error handling
 const baseQuery = fetchBaseQuery({
   baseUrl: BASE_URL,
