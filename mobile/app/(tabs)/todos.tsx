@@ -29,8 +29,17 @@ import {
   useGetTodoStatsQuery,
 } from '@/store/services/todoApi';
 import { useGetHouseholdDetailsQuery } from '@/store/services/householdApi';
-import { useGetTaskSuggestionsMutation } from '@/store/services/expenseApi';
-import { Todo, TodoStatus, TodoPriority, TodoCreateRequest, TodoUpdateRequest, TaskSuggestion } from '@/types';
+// import { useGetTaskSuggestionsMutation } from '@/store/services/expenseApi';
+import { Todo, TodoStatus, TodoPriority, TodoCreateRequest, TodoUpdateRequest } from '@/types';
+
+// TaskSuggestion type - TODO: Implement this feature
+interface TaskSuggestion {
+  title: string;
+  description?: string;
+  priority: TodoPriority;
+  category?: string;
+  reasoning?: string;
+}
 
 export default function TodosScreen() {
   const router = useRouter();
@@ -75,7 +84,8 @@ export default function TodosScreen() {
   const [updateTodoStatus] = useUpdateTodoStatusMutation();
   const [updateTodo] = useUpdateTodoMutation();
   const [deleteTodo] = useDeleteTodoMutation();
-  const [getTaskSuggestions, { isLoading: isLoadingSuggestions }] = useGetTaskSuggestionsMutation();
+  // const [getTaskSuggestions, { isLoading: isLoadingSuggestions }] = useGetTaskSuggestionsMutation();
+  const isLoadingSuggestions = false; // TODO: Implement AI task suggestions
 
   const handleCreateTodo = async () => {
     if (!title.trim() || !activeHouseholdId) return;
@@ -221,9 +231,12 @@ export default function TodosScreen() {
     if (!activeHouseholdId) return;
 
     try {
-      const result = await getTaskSuggestions(activeHouseholdId).unwrap();
-      setAiSuggestions(result.suggestions);
+      // TODO: Implement AI task suggestions API endpoint
+      // const result = await getTaskSuggestions(activeHouseholdId).unwrap();
+      // setAiSuggestions(result.suggestions);
       setSuggestionsDialogVisible(true);
+      setSnackbarMessage('AI suggestions feature coming soon!');
+      setSnackbarVisible(true);
     } catch (error: any) {
       setSnackbarMessage('Failed to get AI suggestions');
       setSnackbarVisible(true);
