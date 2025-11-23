@@ -8,11 +8,11 @@ import { householdApi } from '../services/householdApi';
 /**
  * Redux middleware that triggers notifications based on successful API mutations
  */
-export const notificationMiddleware: Middleware = (store) => (next) => (action) => {
+export const notificationMiddleware: Middleware = (store) => (next) => (action: any) => {
   const result = next(action);
 
   // Check if this is a fulfilled RTK Query mutation
-  if (action.type?.endsWith('/fulfilled')) {
+  if (typeof action.type === 'string' && action.type.endsWith('/fulfilled')) {
     const state = store.getState();
     const currentUser = state.auth.user;
 
@@ -23,33 +23,35 @@ export const notificationMiddleware: Middleware = (store) => (next) => (action) 
       // Expense notifications
       if (expenseApi.endpoints.createExpense.matchFulfilled(action)) {
         const expense = action.payload;
-        if (expense.created_by.id !== currentUser?.id) {
+        // created_by is a string ID, not an object
+        if (expense.created_by !== currentUser?.id) {
           notificationService.notifyExpenseAdded(
             expense.description,
             expense.amount,
-            expense.created_by.full_name || expense.created_by.email
+            'A household member'
           );
         }
       }
 
-      if (expenseApi.endpoints.settleExpenseSplit.matchFulfilled(action)) {
-        const split = action.payload;
-        if (split.user_id !== currentUser?.id) {
-          notificationService.notifyExpenseSettled(
-            'Expense',
-            currentUser?.full_name || currentUser?.email || 'Someone'
-          );
-        }
+      if (expenseApi.endpoints.settleExpense.matchFulfilled(action)) {
+        const response = action.payload;
+        // Notify about settled expenses
+        notificationService.notifyExpenseSettled(
+          'Expense',
+          currentUser?.full_name || currentUser?.email || 'Someone'
+        );
       }
 
       // Shopping list notifications
       if (shoppingApi.endpoints.createShoppingListItem.matchFulfilled(action)) {
         const item = action.payload;
-        if (item.created_by?.id !== currentUser?.id) {
+        // created_by might be a string ID, handle both cases
+        const createdById = typeof item.created_by === 'string' ? item.created_by : (item.created_by as any)?.id;
+        if (createdById && createdById !== currentUser?.id) {
           notificationService.notifyShoppingItemAdded(
             item.name,
             'Shopping List',
-            item.created_by?.full_name || item.created_by?.email || 'Someone'
+            'A household member'
           );
         }
       }
@@ -57,7 +59,8 @@ export const notificationMiddleware: Middleware = (store) => (next) => (action) 
       if (shoppingApi.endpoints.updateShoppingListItem.matchFulfilled(action)) {
         const item = action.payload;
         // Notify if item was marked as purchased by someone else
-        if (item.is_purchased && item.created_by?.id !== currentUser?.id) {
+        const createdById = typeof item.created_by === 'string' ? item.created_by : (item.created_by as any)?.id;
+        if (item.is_purchased && createdById && createdById !== currentUser?.id) {
           notificationService.notifyShoppingItemPurchased(
             item.name,
             currentUser?.full_name || currentUser?.email || 'Someone'
@@ -68,8 +71,8 @@ export const notificationMiddleware: Middleware = (store) => (next) => (action) 
       // Todo notifications
       if (todoApi.endpoints.createTodo.matchFulfilled(action)) {
         const todo = action.payload;
-        // Notify the assigned person
-        if (todo.assigned_to && todo.assigned_to.id !== currentUser?.id) {
+        // Notify the assigned person (assigned_to_id is a string ID)
+        if (todo.assigned_to_id && todo.assigned_to_id !== currentUser?.id) {
           notificationService.notifyTodoAssigned(
             todo.title,
             currentUser?.full_name || currentUser?.email || 'Someone'
@@ -79,8 +82,8 @@ export const notificationMiddleware: Middleware = (store) => (next) => (action) 
 
       if (todoApi.endpoints.updateTodo.matchFulfilled(action)) {
         const todo = action.payload;
-        // Notify when someone completes a todo
-        if (todo.status === 'completed' && todo.created_by?.id !== currentUser?.id) {
+        // Notify when someone completes a todo (created_by is a string ID)
+        if (todo.status === 'completed' && todo.created_by !== currentUser?.id) {
           notificationService.notifyTodoCompleted(
             todo.title,
             currentUser?.full_name || currentUser?.email || 'Someone'
@@ -89,7 +92,7 @@ export const notificationMiddleware: Middleware = (store) => (next) => (action) 
       }
 
       // Household notifications
-      if (householdApi.endpoints.inviteMember.matchFulfilled(action)) {
+      if (householdApi.endpoints.createInvite.matchFulfilled(action)) {
         // The invitation email itself will notify the invitee
         // This could be extended to notify current household members
         console.log('Member invited to household');
