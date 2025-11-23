@@ -417,3 +417,90 @@ export interface ExpenseState {
   analytics: PersonalExpenseAnalytics | null;
   loading: boolean;
 }
+
+// Inventory types
+export enum InventoryCategory {
+  DAIRY = 'dairy',
+  VEGETABLES = 'vegetables',
+  FRUITS = 'fruits',
+  MEAT = 'meat',
+  SEAFOOD = 'seafood',
+  GRAINS = 'grains',
+  PANTRY = 'pantry',
+  BEVERAGES = 'beverages',
+  FROZEN = 'frozen',
+  SNACKS = 'snacks',
+  CONDIMENTS = 'condiments',
+  OTHER = 'other',
+}
+
+export enum InventoryLocation {
+  FRIDGE = 'fridge',
+  FREEZER = 'freezer',
+  PANTRY = 'pantry',
+  KITCHEN_CABINET = 'kitchen_cabinet',
+  OTHER = 'other',
+}
+
+export interface InventoryItem {
+  id: string;
+  household_id: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  category: InventoryCategory;
+  location: InventoryLocation;
+  expiry_date?: string;
+  purchase_date?: string;
+  low_stock_threshold?: number;
+  notes?: string;
+  added_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InventoryItemWithDetails extends InventoryItem {
+  added_by_name: string;
+  added_by_email: string;
+  is_expiring_soon: boolean;
+  is_low_stock: boolean;
+  days_until_expiry?: number;
+}
+
+export interface InventoryItemCreateRequest {
+  household_id: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  category: InventoryCategory;
+  location: InventoryLocation;
+  expiry_date?: string;
+  purchase_date?: string;
+  low_stock_threshold?: number;
+  notes?: string;
+}
+
+export interface InventoryItemUpdateRequest {
+  name?: string;
+  quantity?: number;
+  unit?: string;
+  category?: InventoryCategory;
+  location?: InventoryLocation;
+  expiry_date?: string;
+  purchase_date?: string;
+  low_stock_threshold?: number;
+  notes?: string;
+}
+
+export interface InventoryItemConsumeRequest {
+  quantity: number;
+}
+
+export interface InventoryStats {
+  total_items: number;
+  expiring_soon_count: number;
+  low_stock_count: number;
+  expired_count: number;
+  category_counts: Record<string, number>;
+  location_counts: Record<string, number>;
+}

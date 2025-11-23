@@ -61,7 +61,7 @@ const baseQueryWithRetry = retry(
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithRetry,
-  tagTypes: ['User', 'Todo', 'Shopping', 'Expense', 'Household'],
+  tagTypes: ['User', 'Todo', 'Shopping', 'Expense', 'Household', 'Inventory'],
   endpoints: (builder) => ({
     // Example endpoint - will be extended later
     healthCheck: builder.query<{ status: string }, void>({

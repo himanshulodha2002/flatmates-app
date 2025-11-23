@@ -24,6 +24,11 @@ from app.models.shopping import (
     ItemCategory,
     ShoppingListStatus,
 )
+from app.models.inventory import (
+    InventoryItem,
+    InventoryCategory,
+    InventoryLocation,
+)
 
 __all__ = [
     "User",
@@ -44,4 +49,7 @@ __all__ = [
     "ShoppingListItem",
     "ItemCategory",
     "ShoppingListStatus",
+    "InventoryItem",
+    "InventoryCategory",
+    "InventoryLocation",
 ]
