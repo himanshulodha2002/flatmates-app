@@ -80,7 +80,7 @@ export default function ExpensesScreen() {
 
   const handleExpensePress = (expense: Expense) => {
     router.push({
-      pathname: '/expense-details',
+      pathname: '/expense-details' as any,
       params: { expenseId: expense.id },
     });
   };
@@ -173,7 +173,7 @@ export default function ExpensesScreen() {
                 mode="outlined"
                 onPress={() =>
                   router.push({
-                    pathname: '/expense-analytics',
+                    pathname: '/expense-analytics' as any,
                     params: { householdId: activeHouseholdId },
                   })
                 }

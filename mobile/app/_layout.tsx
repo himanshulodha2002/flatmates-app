@@ -98,17 +98,13 @@ function RootLayoutNav() {
   useEffect(() => {
     const restoreOfflineMode = async () => {
       try {
-        const {
-          isOfflineModeEnabled,
-          getOfflineUser,
-          getOfflineHousehold,
-        } = require('../src/utils/offlineMode');
-        const offlineEnabled = await isOfflineModeEnabled();
+        const offlineMode = await import('../src/utils/offlineMode');
+        const offlineEnabled = await offlineMode.isOfflineModeEnabled();
 
         if (offlineEnabled && !isAuthenticated) {
           console.log('Restoring offline mode...');
-          const user = await getOfflineUser();
-          const household = await getOfflineHousehold();
+          const user = await offlineMode.getOfflineUser();
+          const household = await offlineMode.getOfflineHousehold();
 
           if (user && household) {
             // Restore user and household to Redux
@@ -126,6 +122,7 @@ function RootLayoutNav() {
     };
 
     restoreOfflineMode();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -152,19 +149,26 @@ function RootLayoutNav() {
         router.replace('/login');
         return;
       }
-      
+
       // If authenticated and still on login or onboarding, go to tabs
       if (isAuthenticated && (onLoginScreen || onOnboardingScreen)) {
         router.replace('/(tabs)');
         return;
       }
-      
+
       // Allow access to household-related screens when authenticated
       // No need to redirect if on these screens
-      if (isAuthenticated && (onCreateHouseholdScreen || onJoinHouseholdScreen || onHouseholdSwitcherScreen || onMembersScreen)) {
+      if (
+        isAuthenticated &&
+        (onCreateHouseholdScreen ||
+          onJoinHouseholdScreen ||
+          onHouseholdSwitcherScreen ||
+          onMembersScreen)
+      ) {
         return;
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, segments, onboardingCompleted, offlineModeChecked]);
 
   // Request notification permissions when authenticated
@@ -172,6 +176,7 @@ function RootLayoutNav() {
     if (isAuthenticated && permissionStatus === 'undetermined') {
       requestPermissions();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, permissionStatus]);
 
   return (
