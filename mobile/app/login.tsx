@@ -96,8 +96,8 @@ export default function LoginScreen() {
         </Button>
 
         <Text variant="bodySmall" style={styles.offlineInfo}>
-          Offline mode lets you use the app without a backend. Your data will be stored locally
-          and can sync when the backend becomes available.
+          Offline mode lets you use the app without a backend. Your data will be stored locally and
+          can sync when the backend becomes available.
         </Text>
 
         {(error || localError) && <Text style={styles.errorText}>{error || localError}</Text>}

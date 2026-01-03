@@ -42,10 +42,7 @@ export const ShoppingItemList: React.FC<ShoppingItemListProps> = ({
             <View style={styles.titleContainer}>
               <Text
                 variant="bodyLarge"
-                style={[
-                  styles.itemName,
-                  item.is_purchased && styles.purchasedText,
-                ]}
+                style={[styles.itemName, item.is_purchased && styles.purchasedText]}
               >
                 {item.name}
               </Text>
@@ -115,11 +112,7 @@ export const ShoppingItemList: React.FC<ShoppingItemListProps> = ({
                 />
               )}
               {onDeleteItem && (
-                <IconButton
-                  icon="delete"
-                  size={20}
-                  onPress={() => onDeleteItem(item.id)}
-                />
+                <IconButton icon="delete" size={20} onPress={() => onDeleteItem(item.id)} />
               )}
             </View>
           )}
@@ -156,17 +149,17 @@ export const ShoppingItemList: React.FC<ShoppingItemListProps> = ({
 // Helper function to get category color
 const getCategoryColor = (category?: string): string => {
   const categoryColors: Record<string, string> = {
-    'Produce': '#4CAF50',
-    'Dairy': '#2196F3',
+    Produce: '#4CAF50',
+    Dairy: '#2196F3',
     'Meat & Seafood': '#F44336',
-    'Bakery': '#FF9800',
-    'Pantry': '#795548',
-    'Frozen': '#00BCD4',
-    'Snacks': '#FFC107',
-    'Beverages': '#9C27B0',
+    Bakery: '#FF9800',
+    Pantry: '#795548',
+    Frozen: '#00BCD4',
+    Snacks: '#FFC107',
+    Beverages: '#9C27B0',
     'Health & Beauty': '#E91E63',
-    'Household': '#607D8B',
-    'Other': '#9E9E9E',
+    Household: '#607D8B',
+    Other: '#9E9E9E',
   };
 
   return categoryColors[category || 'Other'] || '#9E9E9E';

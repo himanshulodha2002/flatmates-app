@@ -26,7 +26,10 @@ export function validateEmail(email: string): ValidationResult {
 /**
  * Required field validation
  */
-export function validateRequired(value: string, fieldName: string = 'This field'): ValidationResult {
+export function validateRequired(
+  value: string,
+  fieldName: string = 'This field'
+): ValidationResult {
   if (!value || value.trim() === '') {
     return { isValid: false, error: `${fieldName} is required` };
   }
@@ -107,7 +110,10 @@ export function validateLength(
 /**
  * Date validation (not in past)
  */
-export function validateFutureDate(date: Date | string, fieldName: string = 'Date'): ValidationResult {
+export function validateFutureDate(
+  date: Date | string,
+  fieldName: string = 'Date'
+): ValidationResult {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -156,7 +162,7 @@ export function validatePhone(phone: string): ValidationResult {
  * Validate expense split (total should equal 100% or expense amount)
  */
 export function validateExpenseSplit(
-  splits: Array<{ amount: number }>,
+  splits: { amount: number }[],
   totalAmount: number,
   splitType: 'equal' | 'custom' | 'percentage'
 ): ValidationResult {

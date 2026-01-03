@@ -1,41 +1,46 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import { useGetTaskSuggestionsMutation } from '@/store/services/expenseApi';
+import { useGetHouseholdDetailsQuery } from '@/store/services/householdApi';
 import {
-  FAB,
-  Card,
-  Text,
+  useCreateTodoMutation,
+  useDeleteTodoMutation,
+  useGetTodosQuery,
+  useGetTodoStatsQuery,
+  useUpdateTodoMutation,
+  useUpdateTodoStatusMutation,
+} from '@/store/services/todoApi';
+import { selectActiveHouseholdId } from '@/store/slices/householdSlice';
+import {
+  TaskSuggestion,
+  Todo,
+  TodoCreateRequest,
+  TodoPriority,
+  TodoStatus,
+  TodoUpdateRequest,
+} from '@/types';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import {
   ActivityIndicator,
+  Button,
+  Card,
   Chip,
+  Dialog,
+  Divider,
+  FAB,
   IconButton,
   Menu,
-  Snackbar,
   Portal,
-  Dialog,
-  TextInput,
-  Button,
   SegmentedButtons,
-  Divider,
+  Snackbar,
+  Text,
+  TextInput,
 } from 'react-native-paper';
-import { useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
-import { selectActiveHouseholdId } from '@/store/slices/householdSlice';
-import { selectCurrentUser } from '@/store/slices/authSlice';
-import {
-  useGetTodosQuery,
-  useCreateTodoMutation,
-  useUpdateTodoStatusMutation,
-  useUpdateTodoMutation,
-  useDeleteTodoMutation,
-  useGetTodoStatsQuery,
-} from '@/store/services/todoApi';
-import { useGetHouseholdDetailsQuery } from '@/store/services/householdApi';
-import { useGetTaskSuggestionsMutation } from '@/store/services/expenseApi';
-import { Todo, TodoStatus, TodoPriority, TodoCreateRequest, TodoUpdateRequest, TaskSuggestion } from '@/types';
 
 export default function TodosScreen() {
   const router = useRouter();
   const activeHouseholdId = useSelector(selectActiveHouseholdId);
-  const currentUser = useSelector(selectCurrentUser);
 
   const [statusFilter, setStatusFilter] = useState<TodoStatus | 'all'>('all');
   const [assignedToMeFilter, setAssignedToMeFilter] = useState(false);
@@ -224,7 +229,7 @@ export default function TodosScreen() {
       const result = await getTaskSuggestions(activeHouseholdId).unwrap();
       setAiSuggestions(result.suggestions);
       setSuggestionsDialogVisible(true);
-    } catch (error: any) {
+    } catch {
       setSnackbarMessage('Failed to get AI suggestions');
       setSnackbarVisible(true);
     }
@@ -351,11 +356,7 @@ export default function TodosScreen() {
           >
             Assigned to Me
           </Chip>
-          <Chip
-            onPress={handleGetAISuggestions}
-            style={[styles.chip, styles.aiChip]}
-            icon="robot"
-          >
+          <Chip onPress={handleGetAISuggestions} style={[styles.chip, styles.aiChip]} icon="robot">
             AI Suggestions
           </Chip>
         </ScrollView>
@@ -387,8 +388,8 @@ export default function TodosScreen() {
                           todo.status === TodoStatus.PENDING
                             ? TodoStatus.IN_PROGRESS
                             : todo.status === TodoStatus.IN_PROGRESS
-                            ? TodoStatus.COMPLETED
-                            : TodoStatus.PENDING;
+                              ? TodoStatus.COMPLETED
+                              : TodoStatus.PENDING;
                         handleStatusChange(todo.id, nextStatus);
                       }}
                     />
@@ -418,9 +419,15 @@ export default function TodosScreen() {
                   <Menu
                     visible={menuVisible === todo.id}
                     onDismiss={() => setMenuVisible(null)}
-                    anchor={<IconButton icon="dots-vertical" onPress={() => setMenuVisible(todo.id)} />}
+                    anchor={
+                      <IconButton icon="dots-vertical" onPress={() => setMenuVisible(todo.id)} />
+                    }
                   >
-                    <Menu.Item onPress={() => openEditDialog(todo)} title="Edit" leadingIcon="pencil" />
+                    <Menu.Item
+                      onPress={() => openEditDialog(todo)}
+                      title="Edit"
+                      leadingIcon="pencil"
+                    />
                     <Menu.Item
                       onPress={() => handleStatusChange(todo.id, TodoStatus.PENDING)}
                       title="Mark Pending"
@@ -447,7 +454,10 @@ export default function TodosScreen() {
 
                 <View style={styles.todoMeta}>
                   <Chip
-                    style={[styles.priorityChip, { backgroundColor: getPriorityColor(todo.priority) }]}
+                    style={[
+                      styles.priorityChip,
+                      { backgroundColor: getPriorityColor(todo.priority) },
+                    ]}
                     textStyle={styles.priorityText}
                   >
                     {todo.priority.toUpperCase()}
@@ -498,7 +508,11 @@ export default function TodosScreen() {
                         <Chip
                           style={[
                             styles.priorityChip,
-                            { backgroundColor: getPriorityColor(suggestion.priority as TodoPriority) },
+                            {
+                              backgroundColor: getPriorityColor(
+                                suggestion.priority as TodoPriority
+                              ),
+                            },
                           ]}
                           textStyle={styles.priorityText}
                         >
@@ -600,7 +614,11 @@ export default function TodosScreen() {
         </Dialog>
       </Portal>
 
-      <Snackbar visible={snackbarVisible} onDismiss={() => setSnackbarVisible(false)} duration={3000}>
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={3000}
+      >
         {snackbarMessage}
       </Snackbar>
     </View>

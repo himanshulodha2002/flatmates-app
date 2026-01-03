@@ -1,11 +1,11 @@
-import React, { useState, useRef } from 'react';
-import { View, StyleSheet, Dimensions, ScrollView } from 'react-native';
-import { Text, Button, Surface } from 'react-native-paper';
-import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import React, { useRef, useState } from 'react';
+import { Dimensions, ScrollView, StyleSheet, View } from 'react-native';
+import { Button, Surface, Text } from 'react-native-paper';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 interface OnboardingStep {
   title: string;
@@ -17,7 +17,8 @@ interface OnboardingStep {
 const onboardingSteps: OnboardingStep[] = [
   {
     title: 'Welcome to Flatmates',
-    description: 'Manage your shared living expenses, shopping lists, and household tasks all in one place.',
+    description:
+      'Manage your shared living expenses, shopping lists, and household tasks all in one place.',
     icon: 'home-account',
     color: '#BB86FC',
   },
@@ -29,7 +30,8 @@ const onboardingSteps: OnboardingStep[] = [
   },
   {
     title: 'Shared Shopping Lists',
-    description: 'Create collaborative shopping lists, mark items as purchased, and never forget what to buy.',
+    description:
+      'Create collaborative shopping lists, mark items as purchased, and never forget what to buy.',
     icon: 'cart',
     color: '#CF6679',
   },
@@ -41,7 +43,8 @@ const onboardingSteps: OnboardingStep[] = [
   },
   {
     title: 'AI-Powered Features',
-    description: 'Smart expense categorization, receipt scanning, and task suggestions to make life easier.',
+    description:
+      'Smart expense categorization, receipt scanning, and task suggestions to make life easier.',
     icon: 'robot',
     color: '#03DAC6',
   },

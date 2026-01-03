@@ -83,7 +83,11 @@ function RootLayoutNav() {
   useEffect(() => {
     const restoreOfflineMode = async () => {
       try {
-        const { isOfflineModeEnabled, getOfflineUser, getOfflineHousehold } = require('../src/utils/offlineMode');
+        const {
+          isOfflineModeEnabled,
+          getOfflineUser,
+          getOfflineHousehold,
+        } = require('../src/utils/offlineMode');
         const offlineEnabled = await isOfflineModeEnabled();
 
         if (offlineEnabled && !isAuthenticated) {

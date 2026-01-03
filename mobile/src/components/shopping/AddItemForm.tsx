@@ -1,18 +1,10 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import {
-  TextInput,
-  Button,
-  SegmentedButtons,
-  Chip,
-  Text,
-  useTheme,
-  Switch,
-} from 'react-native-paper';
-import { ShoppingListItemCreateRequest } from '@/types';
 import { useGetItemCategoriesQuery } from '@/store/services/shoppingApi';
-import { useSelector } from 'react-redux';
 import { selectActiveHouseholdId } from '@/store/slices/householdSlice';
+import { ShoppingListItemCreateRequest } from '@/types';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Button, Chip, SegmentedButtons, Switch, Text, TextInput } from 'react-native-paper';
+import { useSelector } from 'react-redux';
 
 interface AddItemFormProps {
   onSubmit: (data: ShoppingListItemCreateRequest) => void;
@@ -28,7 +20,6 @@ export const AddItemForm: React.FC<AddItemFormProps> = ({
   onCancel,
   loading = false,
 }) => {
-  const theme = useTheme();
   const activeHouseholdId = useSelector(selectActiveHouseholdId);
   const { data: categories = [] } = useGetItemCategoriesQuery({
     household_id: activeHouseholdId || undefined,
@@ -161,9 +152,7 @@ export const AddItemForm: React.FC<AddItemFormProps> = ({
         {formData.is_recurring && (
           <SegmentedButtons
             value={formData.recurring_pattern || 'weekly'}
-            onValueChange={(value) =>
-              setFormData({ ...formData, recurring_pattern: value })
-            }
+            onValueChange={(value) => setFormData({ ...formData, recurring_pattern: value })}
             buttons={RECURRING_PATTERNS.map((pattern) => ({
               value: pattern,
               label: pattern.charAt(0).toUpperCase() + pattern.slice(1),

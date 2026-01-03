@@ -42,7 +42,10 @@ export const CategoryFilter: React.FC = () => {
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.section}>
-          <Text variant="labelSmall" style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>
+          <Text
+            variant="labelSmall"
+            style={[styles.label, { color: theme.colors.onSurfaceVariant }]}
+          >
             FILTER
           </Text>
           <Chip
@@ -58,7 +61,10 @@ export const CategoryFilter: React.FC = () => {
 
         {categories.length > 0 && (
           <View style={styles.section}>
-            <Text variant="labelSmall" style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>
+            <Text
+              variant="labelSmall"
+              style={[styles.label, { color: theme.colors.onSurfaceVariant }]}
+            >
               CATEGORY
             </Text>
             <Chip

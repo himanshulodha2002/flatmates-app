@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Text, Button, Surface } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import React from 'react';
+import { StyleSheet } from 'react-native';
+import { Button, Surface, Text } from 'react-native-paper';
 
 interface NetworkErrorProps {
   message?: string;
@@ -19,12 +19,7 @@ export function NetworkError({
 }: NetworkErrorProps) {
   return (
     <Surface style={styles.container}>
-      <MaterialCommunityIcons
-        name="wifi-off"
-        size={48}
-        color="#CF6679"
-        style={styles.icon}
-      />
+      <MaterialCommunityIcons name="wifi-off" size={48} color="#CF6679" style={styles.icon} />
       <Text variant="titleMedium" style={styles.title}>
         Connection Error
       </Text>

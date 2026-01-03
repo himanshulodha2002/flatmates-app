@@ -355,10 +355,10 @@ export interface ExpenseCreate {
   date?: string;
   split_type?: SplitType;
   is_personal?: boolean;
-  splits?: Array<{
+  splits?: {
     user_id: string;
     amount_owed: number;
-  }>;
+  }[];
 }
 
 export interface ExpenseUpdate {

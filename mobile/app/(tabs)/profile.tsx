@@ -1,8 +1,8 @@
 import { useLogoutMutation } from '@/store/services/authApi';
 import {
-    clearCredentials,
-    selectCurrentUser,
-    selectIsAuthenticated,
+  clearCredentials,
+  selectCurrentUser,
+  selectIsAuthenticated,
 } from '@/store/slices/authSlice';
 import { clearHouseholdData } from '@/store/slices/householdSlice';
 import { disableOfflineMode, isOfflineModeEnabled } from '@/utils/offlineMode';

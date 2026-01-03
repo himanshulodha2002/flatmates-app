@@ -2,13 +2,12 @@
  * Unit tests for validation utilities
  */
 import {
-  validateEmail,
-  validateRequired,
-  validatePositiveNumber,
-  validateAmount,
-  validateLength,
-  validateExpenseSplit,
   formatApiError,
+  validateAmount,
+  validateEmail,
+  validateExpenseSplit,
+  validateLength,
+  validateRequired,
 } from '@/utils/validation';
 
 describe('Validation Utils', () => {
@@ -67,29 +66,17 @@ describe('Validation Utils', () => {
 
   describe('validateExpenseSplit', () => {
     it('should validate equal split', () => {
-      const splits = [
-        { amount: 25 },
-        { amount: 25 },
-        { amount: 25 },
-        { amount: 25 },
-      ];
+      const splits = [{ amount: 25 }, { amount: 25 }, { amount: 25 }, { amount: 25 }];
       expect(validateExpenseSplit(splits, 100, 'equal').isValid).toBe(true);
     });
 
     it('should validate percentage split', () => {
-      const splits = [
-        { amount: 40 },
-        { amount: 30 },
-        { amount: 30 },
-      ];
+      const splits = [{ amount: 40 }, { amount: 30 }, { amount: 30 }];
       expect(validateExpenseSplit(splits, 100, 'percentage').isValid).toBe(true);
     });
 
     it('should reject invalid splits', () => {
-      const splits = [
-        { amount: 30 },
-        { amount: 30 },
-      ];
+      const splits = [{ amount: 30 }, { amount: 30 }];
       expect(validateExpenseSplit(splits, 100, 'equal').isValid).toBe(false);
     });
 

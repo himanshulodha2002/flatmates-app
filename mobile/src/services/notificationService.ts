@@ -1,12 +1,18 @@
+import { NotificationType } from '@/types/notification';
 import * as Notifications from 'expo-notifications';
-import { NotificationData, NotificationType } from '@/types/notification';
 
 class NotificationService {
   /**
    * Send a local notification
    */
-  async sendNotification(type: NotificationType, title: string, body: string, data?: Record<string, any>) {
-    const channelId = this.getChannelIdForType(type);
+  async sendNotification(
+    type: NotificationType,
+    title: string,
+    body: string,
+    data?: Record<string, any>
+  ) {
+    // Get channel ID for notification type
+    this.getChannelIdForType(type);
 
     await Notifications.scheduleNotificationAsync({
       content: {

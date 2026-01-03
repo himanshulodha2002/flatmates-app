@@ -51,8 +51,8 @@ describe('Shopping List Integration Tests', () => {
         { id: 'item-3', name: 'Eggs', is_purchased: false },
       ];
 
-      const unpurchased = mockItems.filter(item => !item.is_purchased);
-      const purchased = mockItems.filter(item => item.is_purchased);
+      const unpurchased = mockItems.filter((item) => !item.is_purchased);
+      const purchased = mockItems.filter((item) => item.is_purchased);
 
       expect(unpurchased).toHaveLength(2);
       expect(purchased).toHaveLength(1);
@@ -65,7 +65,7 @@ describe('Shopping List Integration Tests', () => {
         { id: 'item-3', name: 'Cheese', category: 'dairy' },
       ];
 
-      const dairyItems = mockItems.filter(item => item.category === 'dairy');
+      const dairyItems = mockItems.filter((item) => item.category === 'dairy');
       expect(dairyItems).toHaveLength(2);
     });
   });

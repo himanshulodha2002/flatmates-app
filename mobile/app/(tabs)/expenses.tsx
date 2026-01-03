@@ -1,29 +1,29 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, FlatList, RefreshControl } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { AddExpenseModal } from '@/components/expenses/AddExpenseModal';
+import { ExpenseCard } from '@/components/expenses/ExpenseCard';
 import {
-  Text,
-  FAB,
-  useTheme,
-  Searchbar,
-  Chip,
-  Surface,
-  ActivityIndicator,
-  Button,
-  SegmentedButtons,
-} from 'react-native-paper';
-import { useSelector } from 'react-redux';
-import { selectActiveHouseholdId } from '@/store/slices/householdSlice';
-import { selectCurrentUser } from '@/store/slices/authSlice';
-import {
-  useListExpensesQuery,
   useGetHouseholdSummaryQuery,
   useGetPersonalAnalyticsQuery,
+  useListExpensesQuery,
 } from '@/store/services/expenseApi';
-import { ExpenseCard } from '@/components/expenses/ExpenseCard';
-import { AddExpenseModal } from '@/components/expenses/AddExpenseModal';
+import { selectCurrentUser } from '@/store/slices/authSlice';
+import { selectActiveHouseholdId } from '@/store/slices/householdSlice';
 import { Expense, ExpenseCategory } from '@/types';
 import { router } from 'expo-router';
+import React, { useState } from 'react';
+import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Button,
+  Chip,
+  FAB,
+  Searchbar,
+  SegmentedButtons,
+  Surface,
+  Text,
+  useTheme,
+} from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSelector } from 'react-redux';
 
 export default function ExpensesScreen() {
   const theme = useTheme();

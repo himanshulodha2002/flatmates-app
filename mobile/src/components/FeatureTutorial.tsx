@@ -21,12 +21,7 @@ interface FeatureTutorialProps {
 /**
  * Interactive tutorial component for introducing users to specific features
  */
-export function FeatureTutorial({
-  featureKey,
-  steps,
-  visible,
-  onDismiss,
-}: FeatureTutorialProps) {
+export function FeatureTutorial({ featureKey, steps, visible, onDismiss }: FeatureTutorialProps) {
   const [currentStep, setCurrentStep] = useState(0);
 
   const handleNext = () => {
@@ -53,21 +48,11 @@ export function FeatureTutorial({
   const step = steps[currentStep];
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={handleSkip}
-    >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleSkip}>
       <View style={styles.overlay}>
         <Surface style={styles.container}>
           {/* Close button */}
-          <IconButton
-            icon="close"
-            size={24}
-            onPress={handleSkip}
-            style={styles.closeButton}
-          />
+          <IconButton icon="close" size={24} onPress={handleSkip} style={styles.closeButton} />
 
           {/* Icon */}
           {step.icon && (
@@ -99,30 +84,16 @@ export function FeatureTutorial({
           {/* Progress dots */}
           <View style={styles.pagination}>
             {steps.map((_, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.dot,
-                  index === currentStep && styles.dotActive,
-                ]}
-              />
+              <View key={index} style={[styles.dot, index === currentStep && styles.dotActive]} />
             ))}
           </View>
 
           {/* Navigation */}
           <View style={styles.buttons}>
-            <Button
-              mode="text"
-              onPress={handleSkip}
-              style={styles.skipButton}
-            >
+            <Button mode="text" onPress={handleSkip} style={styles.skipButton}>
               Skip
             </Button>
-            <Button
-              mode="contained"
-              onPress={handleNext}
-              style={styles.nextButton}
-            >
+            <Button mode="contained" onPress={handleNext} style={styles.nextButton}>
               {currentStep === steps.length - 1 ? 'Got it!' : 'Next'}
             </Button>
           </View>

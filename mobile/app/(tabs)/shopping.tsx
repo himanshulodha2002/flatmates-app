@@ -1,41 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
 import {
-  FAB,
-  Portal,
-  Modal,
-  Appbar,
-  Text,
-  Button,
-  TextInput,
-  useTheme,
-  SegmentedButtons,
-} from 'react-native-paper';
-import { useSelector, useDispatch } from 'react-redux';
+  AddItemForm,
+  CategoryFilter,
+  ShoppingItemList,
+  ShoppingListCard,
+} from '@/components/shopping';
+import {
+  useCreateShoppingListItemMutation,
+  useCreateShoppingListMutation,
+  useDeleteShoppingListItemMutation,
+  useDeleteShoppingListMutation,
+  useGetShoppingListQuery,
+  useGetShoppingListsQuery,
+} from '@/store/services/shoppingApi';
 import { selectActiveHouseholdId } from '@/store/slices/householdSlice';
 import {
   selectActiveShoppingListId,
+  selectPollingInterval,
   selectSelectedCategory,
   selectShowPurchased,
-  selectPollingInterval,
   setActiveShoppingList,
 } from '@/store/slices/shoppingSlice';
-import {
-  useGetShoppingListsQuery,
-  useGetShoppingListQuery,
-  useCreateShoppingListMutation,
-  useCreateShoppingListItemMutation,
-  useDeleteShoppingListMutation,
-  useDeleteShoppingListItemMutation,
-} from '@/store/services/shoppingApi';
-import {
-  ShoppingListCard,
-  ShoppingItemList,
-  AddItemForm,
-  CategoryFilter,
-} from '@/components/shopping';
 import { ShoppingListCreateRequest, ShoppingListItemCreateRequest } from '@/types';
 import { router } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Appbar, Button, FAB, Modal, Portal, Text, TextInput, useTheme } from 'react-native-paper';
+import { useDispatch, useSelector } from 'react-redux';
 
 type ViewMode = 'lists' | 'items';
 
@@ -55,10 +45,7 @@ export default function ShoppingScreen() {
   const [newListDescription, setNewListDescription] = useState('');
 
   // Queries with polling for real-time updates
-  const {
-    data: shoppingLists = [],
-    refetch: refetchLists,
-  } = useGetShoppingListsQuery(
+  const { data: shoppingLists = [], refetch: refetchLists } = useGetShoppingListsQuery(
     {
       household_id: activeHouseholdId!,
       include_archived: false,
@@ -69,10 +56,7 @@ export default function ShoppingScreen() {
     }
   );
 
-  const {
-    data: currentList,
-    refetch: refetchCurrentList,
-  } = useGetShoppingListQuery(
+  const { data: currentList, refetch: refetchCurrentList } = useGetShoppingListQuery(
     {
       list_id: activeShoppingListId!,
       category: selectedCategory || undefined,

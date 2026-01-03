@@ -1,6 +1,6 @@
+import { HouseholdMember, HouseholdWithMembers, MemberRole, User } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { User, Household, HouseholdWithMembers, MemberRole, HouseholdMember } from '@/types';
-import { saveData, getData } from './storage';
+import { getData, saveData } from './storage';
 
 const OFFLINE_MODE_KEY = 'offline_mode_enabled';
 const OFFLINE_USER_KEY = 'offline_user';

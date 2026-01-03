@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Card, Text, Chip, IconButton, ProgressBar, useTheme } from 'react-native-paper';
-import { ShoppingList, ShoppingListStats } from '@/types';
 import { useGetShoppingListStatsQuery } from '@/store/services/shoppingApi';
+import { ShoppingList } from '@/types';
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
+import { Card, Chip, IconButton, ProgressBar, Text, useTheme } from 'react-native-paper';
 
 interface ShoppingListCardProps {
   list: ShoppingList;
@@ -36,11 +36,7 @@ export const ShoppingListCard: React.FC<ShoppingListCardProps> = ({
               {list.name}
             </Text>
             {list.status === 'archived' && (
-              <Chip
-                mode="flat"
-                textStyle={{ fontSize: 10 }}
-                style={styles.archivedChip}
-              >
+              <Chip mode="flat" textStyle={{ fontSize: 10 }} style={styles.archivedChip}>
                 Archived
               </Chip>
             )}
@@ -114,11 +110,7 @@ export const ShoppingListCard: React.FC<ShoppingListCardProps> = ({
               )}
             </View>
 
-            <ProgressBar
-              progress={progress}
-              color={progressColor}
-              style={styles.progressBar}
-            />
+            <ProgressBar progress={progress} color={progressColor} style={styles.progressBar} />
           </>
         )}
       </Card.Content>

@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
-import { Platform } from 'react-native';
-import Constants from 'expo-constants';
 import { NotificationData } from '@/types/notification';
+import Constants from 'expo-constants';
+import * as Device from 'expo-device';
+import * as Notifications from 'expo-notifications';
+import { useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 
 // Configure notification behavior when app is in foreground
 Notifications.setNotificationHandler({
@@ -17,7 +17,9 @@ Notifications.setNotificationHandler({
 export function useNotifications() {
   const [expoPushToken, setExpoPushToken] = useState<string>('');
   const [notification, setNotification] = useState<Notifications.Notification | null>(null);
-  const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
+  const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>(
+    'undetermined'
+  );
 
   const notificationListener = useRef<Notifications.Subscription>();
   const responseListener = useRef<Notifications.Subscription>();
@@ -29,19 +31,19 @@ export function useNotifications() {
     }
 
     // Register for push notifications
-    registerForPushNotificationsAsync().then(token => {
+    registerForPushNotificationsAsync().then((token) => {
       if (token) {
         setExpoPushToken(token);
       }
     });
 
     // Listen for notifications while app is in foreground
-    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+    notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
       setNotification(notification);
     });
 
     // Listen for user interactions with notifications
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+    responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
       // Handle notification tap - navigate to relevant screen based on notification data
       const data = response.notification.request.content.data;
       handleNotificationResponse(data);
@@ -140,7 +142,8 @@ export function useNotifications() {
   };
 
   const scheduleLocalNotification = async (notificationData: NotificationData) => {
-    const channelId = getChannelIdForType(notificationData.type);
+    // Get channel ID for notification type
+    getChannelIdForType(notificationData.type);
 
     await Notifications.scheduleNotificationAsync({
       content: {

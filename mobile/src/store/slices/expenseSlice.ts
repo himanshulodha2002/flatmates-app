@@ -73,8 +73,7 @@ export const selectExpenses = (state: { expense: ExpenseState }) => state.expens
 export const selectCurrentExpense = (state: { expense: ExpenseState }) =>
   state.expense.currentExpense;
 export const selectExpenseSummary = (state: { expense: ExpenseState }) => state.expense.summary;
-export const selectExpenseAnalytics = (state: { expense: ExpenseState }) =>
-  state.expense.analytics;
+export const selectExpenseAnalytics = (state: { expense: ExpenseState }) => state.expense.analytics;
 export const selectExpenseLoading = (state: { expense: ExpenseState }) => state.expense.loading;
 
 export default expenseSlice.reducer;

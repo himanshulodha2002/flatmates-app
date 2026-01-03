@@ -38,7 +38,8 @@ export const todoApi = api.injectEndpoints({
         const params = new URLSearchParams({ household_id });
         if (status) params.append('status', status);
         if (assigned_to_me !== undefined) params.append('assigned_to_me', String(assigned_to_me));
-        if (include_completed !== undefined) params.append('include_completed', String(include_completed));
+        if (include_completed !== undefined)
+          params.append('include_completed', String(include_completed));
         return `/todos/?${params.toString()}`;
       },
       providesTags: (result) =>

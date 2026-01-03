@@ -1,19 +1,18 @@
-import { api } from './api';
 import {
-  ShoppingList,
-  ShoppingListWithItems,
-  ShoppingListItem,
-  ShoppingListItemWithDetails,
   ItemCategory,
-  ShoppingListCreateRequest,
-  ShoppingListUpdateRequest,
-  ShoppingListItemCreateRequest,
-  ShoppingListItemUpdateRequest,
-  ShoppingListItemPurchaseUpdateRequest,
   ItemCategoryCreateRequest,
+  ShoppingList,
+  ShoppingListCreateRequest,
+  ShoppingListItem,
+  ShoppingListItemCreateRequest,
+  ShoppingListItemPurchaseUpdateRequest,
+  ShoppingListItemUpdateRequest,
   ShoppingListStats,
   ShoppingListStatus,
+  ShoppingListUpdateRequest,
+  ShoppingListWithItems,
 } from '@/types';
+import { api } from './api';
 
 interface ListShoppingListsParams {
   household_id: string;
@@ -57,7 +56,8 @@ export const shoppingApi = api.injectEndpoints({
       query: ({ household_id, status, include_archived }) => {
         const params = new URLSearchParams({ household_id });
         if (status) params.append('status', status);
-        if (include_archived !== undefined) params.append('include_archived', String(include_archived));
+        if (include_archived !== undefined)
+          params.append('include_archived', String(include_archived));
         return `/shopping-lists/?${params.toString()}`;
       },
       providesTags: (result) =>
@@ -85,7 +85,10 @@ export const shoppingApi = api.injectEndpoints({
     }),
 
     // Update shopping list
-    updateShoppingList: builder.mutation<ShoppingList, { listId: string; data: ShoppingListUpdateRequest }>({
+    updateShoppingList: builder.mutation<
+      ShoppingList,
+      { listId: string; data: ShoppingListUpdateRequest }
+    >({
       query: ({ listId, data }) => ({
         url: `/shopping-lists/${listId}`,
         method: 'PUT',
@@ -115,7 +118,10 @@ export const shoppingApi = api.injectEndpoints({
     // ============ Shopping List Item Endpoints ============
 
     // Create shopping list item
-    createShoppingListItem: builder.mutation<ShoppingListItem, { listId: string; data: ShoppingListItemCreateRequest }>({
+    createShoppingListItem: builder.mutation<
+      ShoppingListItem,
+      { listId: string; data: ShoppingListItemCreateRequest }
+    >({
       query: ({ listId, data }) => ({
         url: `/shopping-lists/${listId}/items`,
         method: 'POST',
