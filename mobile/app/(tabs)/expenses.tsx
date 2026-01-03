@@ -55,8 +55,8 @@ export default function ExpensesScreen() {
     skip: !activeHouseholdId,
   });
 
-  // Fetch personal analytics
-  const { data: analytics } = useGetPersonalAnalyticsQuery(
+  // Fetch personal analytics (unused for now)
+  useGetPersonalAnalyticsQuery(
     {
       user_id: currentUser?.id!,
       household_id: activeHouseholdId || undefined,
