@@ -11,9 +11,6 @@ class NotificationService {
     body: string,
     data?: Record<string, any>
   ) {
-    // Get channel ID for notification type
-    this.getChannelIdForType(type);
-
     await Notifications.scheduleNotificationAsync({
       content: {
         title,

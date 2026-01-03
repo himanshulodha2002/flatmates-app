@@ -21,13 +21,13 @@ export function useNotifications() {
     'undetermined'
   );
 
-  const notificationListener = useRef<Notifications.Subscription>();
-  const responseListener = useRef<Notifications.Subscription>();
+  const notificationListener = useRef<Notifications.Subscription | null>(null);
+  const responseListener = useRef<Notifications.Subscription | null>(null);
 
   useEffect(() => {
     // Set up notification channels for Android
     if (Platform.OS === 'android') {
-      setupNotificationChannels();
+      void setupNotificationChannels();
     }
 
     // Register for push notifications
@@ -142,9 +142,6 @@ export function useNotifications() {
   };
 
   const scheduleLocalNotification = async (notificationData: NotificationData) => {
-    // Get channel ID for notification type
-    getChannelIdForType(notificationData.type);
-
     await Notifications.scheduleNotificationAsync({
       content: {
         title: notificationData.title,
@@ -155,13 +152,6 @@ export function useNotifications() {
       },
       trigger: null, // Show immediately
     });
-  };
-
-  const getChannelIdForType = (type: string): string => {
-    if (type.startsWith('expense')) return 'expenses';
-    if (type.startsWith('shopping')) return 'shopping';
-    if (type.startsWith('todo')) return 'todos';
-    return 'household';
   };
 
   const requestPermissions = async (): Promise<boolean> => {
