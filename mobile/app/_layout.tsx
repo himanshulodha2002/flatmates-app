@@ -9,12 +9,27 @@ import { Provider, useSelector, useDispatch } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { PaperProvider } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 import { store, persistor } from '../src/store';
 import { theme } from '../src/theme/theme';
 import { useNotifications } from '../src/hooks/useNotifications';
 import { selectIsAuthenticated, setCredentials } from '../src/store/slices/authSlice';
 import { setActiveHousehold, setCurrentHousehold } from '../src/store/slices/householdSlice';
+
+// Web-compatible storage helper
+const getStorageItem = async (key: string): Promise<string | null> => {
+  if (Platform.OS === 'web') {
+    try {
+      return localStorage.getItem(key);
+    } catch (error) {
+      console.error('Error getting item from storage:', error);
+      return null;
+    }
+  } else {
+    return await AsyncStorage.getItem(key);
+  }
+};
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -73,7 +88,7 @@ function RootLayoutNav() {
   // Check if onboarding is completed
   useEffect(() => {
     const checkOnboarding = async () => {
-      const completed = await AsyncStorage.getItem('onboarding_completed');
+      const completed = await getStorageItem('onboarding_completed');
       setOnboardingCompleted(completed === 'true');
     };
     checkOnboarding();
@@ -119,19 +134,36 @@ function RootLayoutNav() {
     const inAuthGroup = segments[0] === '(tabs)';
     const onOnboardingScreen = segments[0] === 'onboarding';
     const onLoginScreen = segments[0] === 'login';
+    const onCreateHouseholdScreen = segments[0] === 'create-household';
+    const onJoinHouseholdScreen = segments[0] === 'join-household';
+    const onHouseholdSwitcherScreen = segments[0] === 'household-switcher';
+    const onMembersScreen = segments[0] === 'members';
 
     // First time users should see onboarding
-    if (!onboardingCompleted && !onOnboardingScreen && !isAuthenticated) {
+    if (!onboardingCompleted && !onOnboardingScreen) {
       router.replace('/onboarding');
       return;
     }
 
-    if (!isAuthenticated && inAuthGroup) {
-      // Redirect to login if not authenticated and trying to access protected routes
-      router.replace('/login');
-    } else if (isAuthenticated && !inAuthGroup && !onOnboardingScreen && !onLoginScreen) {
-      // Redirect to tabs if authenticated and not already on tabs/onboarding/login
-      router.replace('/(tabs)');
+    // After onboarding is completed, handle authentication routing
+    if (onboardingCompleted) {
+      // If not authenticated and trying to access protected routes, go to login
+      if (!isAuthenticated && inAuthGroup) {
+        router.replace('/login');
+        return;
+      }
+      
+      // If authenticated and still on login or onboarding, go to tabs
+      if (isAuthenticated && (onLoginScreen || onOnboardingScreen)) {
+        router.replace('/(tabs)');
+        return;
+      }
+      
+      // Allow access to household-related screens when authenticated
+      // No need to redirect if on these screens
+      if (isAuthenticated && (onCreateHouseholdScreen || onJoinHouseholdScreen || onHouseholdSwitcherScreen || onMembersScreen)) {
+        return;
+      }
     }
   }, [isAuthenticated, segments, onboardingCompleted, offlineModeChecked]);
 

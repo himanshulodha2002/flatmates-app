@@ -11,6 +11,7 @@ import {
   REGISTER,
 } from 'redux-persist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 import authReducer from './slices/authSlice';
 import householdReducer from './slices/householdSlice';
 import expenseReducer from './slices/expenseSlice';
@@ -18,11 +19,42 @@ import shoppingReducer from './slices/shoppingSlice';
 import { api } from './services/api';
 import { notificationMiddleware } from './middleware/notificationMiddleware';
 
+// Web-compatible storage adapter
+const createWebStorage = () => {
+  return {
+    getItem: async (key: string): Promise<string | null> => {
+      try {
+        return localStorage.getItem(key);
+      } catch (error) {
+        console.error('Error getting item from storage:', error);
+        return null;
+      }
+    },
+    setItem: async (key: string, value: string): Promise<void> => {
+      try {
+        localStorage.setItem(key, value);
+      } catch (error) {
+        console.error('Error storing data:', error);
+      }
+    },
+    removeItem: async (key: string): Promise<void> => {
+      try {
+        localStorage.removeItem(key);
+      } catch (error) {
+        console.error('Error removing item from storage:', error);
+      }
+    },
+  };
+};
+
+// Use localStorage for web, AsyncStorage for native
+const storage = Platform.OS === 'web' ? createWebStorage() : AsyncStorage;
+
 // Persist configuration
 const persistConfig = {
   key: 'root',
   version: 1,
-  storage: AsyncStorage,
+  storage,
   whitelist: ['auth', 'household', 'expense', 'shopping'], // Persist auth, household, expense, and shopping state
 };
 

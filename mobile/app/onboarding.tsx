@@ -2,8 +2,21 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
-import { Dimensions, ScrollView, StyleSheet, View } from 'react-native';
+import { Dimensions, ScrollView, StyleSheet, View, Platform } from 'react-native';
 import { Button, Surface, Text } from 'react-native-paper';
+
+// Web-compatible storage helper
+const setStorageItem = async (key: string, value: string) => {
+  if (Platform.OS === 'web') {
+    try {
+      localStorage.setItem(key, value);
+    } catch (error) {
+      console.error('Error storing data:', error);
+    }
+  } else {
+    await AsyncStorage.setItem(key, value);
+  }
+};
 
 const { width } = Dimensions.get('window');
 
@@ -73,7 +86,7 @@ export default function OnboardingScreen() {
 
   const handleFinish = async () => {
     // Mark onboarding as completed
-    await AsyncStorage.setItem('onboarding_completed', 'true');
+    await setStorageItem('onboarding_completed', 'true');
     router.replace('/login');
   };
 
