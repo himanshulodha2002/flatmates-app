@@ -108,6 +108,12 @@ jobs:
             echo "profile=preview" >> $GITHUB_OUTPUT
           fi
       
+      - name: Create .env file
+        working-directory: mobile
+        run: |
+          echo "EXPO_PUBLIC_API_URL=${{ secrets.API_URL }}" > .env
+          echo "EXPO_PUBLIC_ENVIRONMENT=production" >> .env
+      
       - name: Build Android APK with EAS
         working-directory: mobile
         run: |
