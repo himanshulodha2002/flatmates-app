@@ -3,12 +3,17 @@ Tests for household management endpoints.
 """
 import pytest
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 from app.models.user import User
 from app.models.household import Household, HouseholdMember, HouseholdInvite, MemberRole, InviteStatus
 from app.core.security import create_access_token
+
+
+def utc_now():
+    """Get current UTC time as naive datetime (for SQLite compatibility)."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 @pytest.fixture
@@ -221,7 +226,7 @@ def test_join_household(client, test_user2, auth_headers_user2, db_session):
         email="test2@example.com",
         token="test-token-123",
         status=InviteStatus.PENDING,
-        expires_at=datetime.utcnow() + timedelta(days=7),
+        expires_at=utc_now() + timedelta(days=7),
         created_by=other_user.id
     )
     db_session.add(invite)
@@ -279,7 +284,7 @@ def test_join_household_expired_token(client, test_user2, auth_headers_user2, db
         email="test2@example.com",
         token="expired-token-123",
         status=InviteStatus.PENDING,
-        expires_at=datetime.utcnow() - timedelta(days=1),
+        expires_at=utc_now() - timedelta(days=1),
         created_by=other_user.id
     )
     db_session.add(invite)

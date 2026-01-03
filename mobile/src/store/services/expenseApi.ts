@@ -7,6 +7,7 @@ import {
   ExpenseSummary,
   PersonalExpenseAnalytics,
   ExpenseCategory,
+  TaskSuggestionsResponse,
 } from '@/types';
 
 interface ListExpensesParams {
@@ -129,6 +130,14 @@ export const expenseApi = api.injectEndpoints({
         { type: 'Expense', id: `analytics-${user_id}-${household_id || 'all'}` },
       ],
     }),
+
+    // Get AI task suggestions for a household
+    getTaskSuggestions: builder.mutation<TaskSuggestionsResponse, string>({
+      query: (householdId) => ({
+        url: `/expenses/ai/suggest-tasks?household_id=${householdId}`,
+        method: 'POST',
+      }),
+    }),
   }),
 });
 
@@ -145,4 +154,5 @@ export const {
   useLazyGetHouseholdSummaryQuery,
   useGetPersonalAnalyticsQuery,
   useLazyGetPersonalAnalyticsQuery,
+  useGetTaskSuggestionsMutation,
 } = expenseApi;

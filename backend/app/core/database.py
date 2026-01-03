@@ -3,12 +3,24 @@ Database configuration and session management.
 SQLAlchemy setup for PostgreSQL with async support.
 """
 
+from datetime import datetime, timezone
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 from typing import Generator
 
 from app.core.config import settings
+
+
+def utc_now() -> datetime:
+    """
+    Return current UTC time as a naive datetime (no timezone info).
+    
+    This is preferred for SQLite compatibility. PostgreSQL will handle
+    timezone-aware datetimes correctly, but SQLite strips timezone info.
+    Use this instead of deprecated datetime.utcnow().
+    """
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
 
 # Detect sqlite and pass special connect_args required for SQLite in multithreaded
 # environments (e.g., dev server). For SQLite URLs, set check_same_thread=False.

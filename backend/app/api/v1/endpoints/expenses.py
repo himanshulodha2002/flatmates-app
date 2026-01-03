@@ -26,7 +26,10 @@ from app.schemas.expense import (
     UserBalance,
     PersonalExpenseAnalytics,
     MonthlyExpenseStats,
+    TaskSuggestionsResponse,
+    TaskSuggestion,
 )
+from app.core.database import utc_now
 
 router = APIRouter()
 
@@ -104,7 +107,7 @@ def create_expense(
         description=expense_data.description,
         category=expense_data.category,
         payment_method=expense_data.payment_method,
-        date=expense_data.date or datetime.utcnow(),
+        date=expense_data.date or utc_now(),
         split_type=expense_data.split_type,
         is_personal=expense_data.is_personal,
     )
@@ -133,7 +136,7 @@ def create_expense(
                     user_id=user_id,
                     amount_owed=amount_owed,
                     is_settled=(user_id == current_user.id),  # Creator is auto-settled
-                    settled_at=datetime.utcnow() if user_id == current_user.id else None,
+                    settled_at=utc_now() if user_id == current_user.id else None,
                 )
                 db.add(split)
 
@@ -162,7 +165,7 @@ def create_expense(
                     user_id=split_data.user_id,
                     amount_owed=split_data.amount_owed,
                     is_settled=(split_data.user_id == current_user.id),
-                    settled_at=datetime.utcnow() if split_data.user_id == current_user.id else None,
+                    settled_at=utc_now() if split_data.user_id == current_user.id else None,
                 )
                 db.add(split)
 
@@ -346,7 +349,7 @@ def update_expense(
     if expense_update.date is not None:
         expense.date = expense_update.date
 
-    expense.updated_at = datetime.utcnow()
+    expense.updated_at = utc_now()
 
     db.commit()
     db.refresh(expense)
@@ -437,7 +440,7 @@ def settle_expense(
     for split in splits:
         if not split.is_settled:
             split.is_settled = True
-            split.settled_at = datetime.utcnow()
+            split.settled_at = utc_now()
             settled_ids.append(split.id)
 
     db.commit()
@@ -547,7 +550,7 @@ def get_personal_analytics(
             detail="You can only view your own analytics",
         )
 
-    period_end = datetime.utcnow()
+    period_end = utc_now()
     period_start = period_end - timedelta(days=30 * months)
 
     # Build query
@@ -647,3 +650,106 @@ def get_personal_analytics(
         category_breakdown=category_totals,
         monthly_stats=monthly_stats,
     )
+
+
+@router.post("/ai/suggest-tasks", response_model=TaskSuggestionsResponse)
+async def get_task_suggestions(
+    household_id: uuid.UUID = Query(..., description="Household ID to get suggestions for"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get AI-powered task suggestions for a household.
+
+    Uses AI to analyze the household context, existing tasks, and recent expenses
+    to suggest practical tasks for the flatmates.
+    """
+    # Verify user is a member of the household
+    verify_household_membership(household_id, current_user, db)
+
+    # Get household info
+    household = db.query(Household).filter(Household.id == household_id).first()
+    if not household:
+        raise HTTPException(status_code=404, detail="Household not found")
+
+    # Get member count
+    member_count = (
+        db.query(HouseholdMember)
+        .filter(HouseholdMember.household_id == household_id)
+        .count()
+    )
+
+    # Get existing todos (import Todo model at the top if not already)
+    from app.models.todo import Todo, TodoStatus
+
+    existing_tasks = (
+        db.query(Todo)
+        .filter(
+            Todo.household_id == household_id,
+            Todo.status != TodoStatus.COMPLETED,
+        )
+        .limit(10)
+        .all()
+    )
+
+    # Get recent expenses
+    recent_expenses = (
+        db.query(Expense)
+        .filter(Expense.household_id == household_id)
+        .order_by(Expense.created_at.desc())
+        .limit(10)
+        .all()
+    )
+
+    # Build context for AI
+    household_context = {
+        "name": household.name,
+        "member_count": member_count,
+    }
+
+    task_dicts = [
+        {
+            "title": t.title,
+            "description": t.description or "",
+            "status": t.status.value if hasattr(t.status, 'value') else str(t.status),
+            "priority": t.priority.value if hasattr(t.priority, 'value') else str(t.priority),
+        }
+        for t in existing_tasks
+    ]
+
+    expense_dicts = [
+        {
+            "amount": float(e.amount),
+            "description": e.description,
+            "category": e.category.value if hasattr(e.category, 'value') else str(e.category),
+        }
+        for e in recent_expenses
+    ]
+
+    # Try to get AI suggestions
+    try:
+        from app.services.ai_service import AIService
+
+        ai_service = AIService()
+        suggestions = await ai_service.suggest_tasks(
+            household_context=household_context,
+            existing_tasks=task_dicts,
+            recent_expenses=expense_dicts,
+        )
+
+        # Convert to response format
+        return TaskSuggestionsResponse(
+            suggestions=[
+                TaskSuggestion(
+                    title=s.get("title", "Untitled Task"),
+                    description=s.get("description", ""),
+                    priority=s.get("priority", "medium"),
+                    category=s.get("category", "other"),
+                    reasoning=s.get("reasoning", "AI suggestion"),
+                )
+                for s in suggestions
+            ]
+        )
+    except Exception as e:
+        # Return empty suggestions if AI is not available
+        return TaskSuggestionsResponse(suggestions=[])

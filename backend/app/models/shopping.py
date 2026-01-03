@@ -3,13 +3,13 @@ Shopping list models for collaborative shopping management.
 """
 
 import uuid
-from datetime import datetime
 from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Enum as SQLEnum, Boolean, Float, Numeric, Integer, UniqueConstraint
 from sqlalchemy.orm import relationship
 import enum
 
 from app.models.base import Base
 from app.models.user import GUID
+from app.core.database import utc_now
 
 
 class ShoppingListStatus(str, enum.Enum):
@@ -31,7 +31,7 @@ class ItemCategory(Base):
     household_id = Column(
         GUID(), ForeignKey("households.id", ondelete="CASCADE"), nullable=True, index=True
     )
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
 
     # Relationships
     household = relationship("Household")
@@ -57,8 +57,8 @@ class ShoppingList(Base):
     description = Column(Text, nullable=True)
     status = Column(SQLEnum(ShoppingListStatus), nullable=False, default=ShoppingListStatus.ACTIVE, index=True)
     created_by = Column(GUID(), ForeignKey("users.id"), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
     # Relationships
     household = relationship("Household")
@@ -95,11 +95,11 @@ class ShoppingListItem(Base):
     checked_off_by = Column(
         GUID(), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
-    checked_off_at = Column(DateTime, nullable=True)
+    checked_off_at = Column(DateTime(timezone=True), nullable=True)
     position = Column(Integer, nullable=False, default=0, index=True)
     created_by = Column(GUID(), ForeignKey("users.id"), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
     # Relationships
     shopping_list = relationship("ShoppingList", back_populates="items")

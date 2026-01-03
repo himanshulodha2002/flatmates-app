@@ -1,19 +1,20 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
-import { Provider } from 'react-redux';
+import { Provider, useSelector, useDispatch } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { PaperProvider } from 'react-native-paper';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { store, persistor } from '../src/store';
 import { theme } from '../src/theme/theme';
 import { useNotifications } from '../src/hooks/useNotifications';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useState } from 'react';
+import { selectIsAuthenticated, setCredentials } from '../src/store/slices/authSlice';
+import { setActiveHousehold, setCurrentHousehold } from '../src/store/slices/householdSlice';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -59,17 +60,12 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const { useRouter, useSegments } = require('expo-router');
   const router = useRouter();
   const segments = useSegments();
-  const { useSelector, useDispatch } = require('react-redux');
-  const { selectIsAuthenticated } = require('../src/store/slices/authSlice');
-  const { setCredentials } = require('../src/store/slices/authSlice');
-  const { setActiveHousehold, setCurrentHousehold } = require('../src/store/slices/householdSlice');
+  const dispatch = useDispatch();
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
   const [offlineModeChecked, setOfflineModeChecked] = useState(false);
-  const dispatch = useDispatch();
 
   // Initialize push notifications
   const { permissionStatus, requestPermissions } = useNotifications();

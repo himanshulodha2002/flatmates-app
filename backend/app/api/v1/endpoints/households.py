@@ -4,7 +4,7 @@ Household management endpoints.
 
 import secrets
 import uuid
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -28,6 +28,7 @@ from app.schemas.household import (
     MemberRoleUpdate,
     MemberWithUser,
 )
+from app.core.database import utc_now
 
 router = APIRouter()
 
@@ -233,7 +234,7 @@ def list_invites(
         .filter(
             HouseholdInvite.household_id == household_id,
             HouseholdInvite.status == InviteStatus.PENDING,
-            HouseholdInvite.expires_at > datetime.utcnow(),
+            HouseholdInvite.expires_at > utc_now(),
         )
         .all()
     )
@@ -288,7 +289,7 @@ def create_invite(
             HouseholdInvite.household_id == household_id,
             HouseholdInvite.email == invite_data.email,
             HouseholdInvite.status == InviteStatus.PENDING,
-            HouseholdInvite.expires_at > datetime.utcnow(),
+            HouseholdInvite.expires_at > utc_now(),
         )
         .first()
     )
@@ -308,7 +309,7 @@ def create_invite(
         email=invite_data.email,
         token=token,
         status=InviteStatus.PENDING,
-        expires_at=datetime.utcnow() + timedelta(days=7),
+        expires_at=utc_now() + timedelta(days=7),
         created_by=current_user.id,
     )
     db.add(invite)
@@ -398,7 +399,7 @@ def join_household(
         )
 
     # Check if expired
-    if invite.status == InviteStatus.EXPIRED or invite.expires_at < datetime.utcnow():
+    if invite.status == InviteStatus.EXPIRED or invite.expires_at < utc_now():
         invite.status = InviteStatus.EXPIRED
         db.commit()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invite has expired")

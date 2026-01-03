@@ -2,11 +2,47 @@
 
 This guide provides instructions for building an APK for the Flatmates app.
 
-## Prerequisites
+## 🚀 Quick Options
 
-- Node.js and npm installed
-- For local builds: Android Studio and Java Development Kit (JDK)
-- For cloud builds: Expo EAS account
+| Method | Effort | Best For |
+|--------|--------|----------|
+| **GitHub Actions (Auto)** | Zero | Every push to main |
+| **Manual Trigger** | 1 click | On-demand builds |
+| **EAS CLI** | 1 command | Local development |
+| **Local Build** | Most setup | Offline/debugging |
+
+---
+
+## Option 0: Automated Builds (GitHub Actions) ⭐ NEW!
+
+**APK is built automatically on every push to `main`!**
+
+### How it works:
+1. Push code to `main` branch
+2. GitHub Actions runs tests
+3. If tests pass → APK build starts automatically
+4. Download APK from Expo dashboard or GitHub Artifacts
+
+### Manual Trigger (build on-demand):
+1. Go to **Actions** tab in GitHub
+2. Select **Mobile CI/CD** workflow
+3. Click **Run workflow**
+4. Choose build type: `development`, `preview`, or `production`
+5. Click **Run workflow** button
+
+### One-time Setup Required:
+
+1. **Create Expo account** (FREE): https://expo.dev/signup
+
+2. **Get Expo token**:
+   - Go to https://expo.dev/accounts/[username]/settings/access-tokens
+   - Create new token → Copy it
+
+3. **Add to GitHub Secrets**:
+   - Go to your repo → Settings → Secrets → Actions
+   - Add: `EXPO_TOKEN` = your token
+
+That's it! Now APKs build automatically! 🎉
 
 ---
 

@@ -4,11 +4,13 @@ Pydantic schemas for authentication.
 
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel, UUID4, ConfigDict
 
 
 class UserResponse(BaseModel):
     """Schema for user response."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: UUID4
     email: str
@@ -18,9 +20,6 @@ class UserResponse(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class TokenResponse(BaseModel):

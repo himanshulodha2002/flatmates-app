@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 5.9.0"
+    "version": ">= 5.9.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
@@ -11,26 +12,38 @@
         "gradleCommand": ":app:assembleDebug"
       },
       "ios": {
-        "buildConfiguration": "Debug"
+        "buildConfiguration": "Debug",
+        "simulator": true
+      },
+      "env": {
+        "APP_ENV": "development"
       }
     },
     "preview": {
       "distribution": "internal",
       "android": {
-        "buildType": "apk",
-        "credentialsSource": "remote"
-      },
-      "ios": {
-        "simulator": true
-      }
-    },
-    "production": {
-      "android": {
         "buildType": "apk"
       },
       "ios": {
+        "simulator": true
+      },
+      "env": {
+        "APP_ENV": "preview"
+      },
+      "channel": "preview"
+    },
+    "production": {
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "ios": {
         "buildConfiguration": "Release"
-      }
+      },
+      "env": {
+        "APP_ENV": "production"
+      },
+      "channel": "production",
+      "autoIncrement": true
     }
   },
   "submit": {
@@ -39,7 +52,10 @@
         "serviceAccountKeyPath": "./service-account-key.json",
         "track": "internal"
       },
-      "ios": {}
+      "ios": {
+        "appleId": "your-apple-id@email.com",
+        "ascAppId": "your-app-store-connect-app-id"
+      }
     }
   }
 }

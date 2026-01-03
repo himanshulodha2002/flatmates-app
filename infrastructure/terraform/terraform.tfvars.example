@@ -1,0 +1,34 @@
+# Development Environment Configuration
+# Copy this file to terraform.tfvars and customize for your environment
+
+environment = "dev"
+aws_region  = "us-west-2"
+
+# VPC Configuration
+vpc_cidr           = "10.0.0.0/16"
+availability_zones = ["us-west-2a", "us-west-2b"]
+
+# Database - use smaller instance for dev
+db_instance_class    = "db.t3.micro"
+db_allocated_storage = 20
+
+# ECS - minimal resources for dev
+ecs_cpu           = 256
+ecs_memory        = 512
+ecs_desired_count = 1
+
+# Redis - disabled for dev
+enable_redis = false
+
+# Container image - update with your registry
+container_image = "ghcr.io/himanshulodha2002/flatmates-backend:latest"
+
+# Monitoring - add your email for alerts
+alarm_email = ""
+
+# Application secrets - these should be set via environment variables or secrets manager
+# DO NOT commit real values to version control
+# google_client_id     = ""
+# google_client_secret = ""
+# gemini_api_key       = ""
+# openai_api_key       = ""

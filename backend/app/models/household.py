@@ -3,13 +3,13 @@ Household models for managing flatmate groups.
 """
 
 import uuid
-from datetime import datetime
 from sqlalchemy import Column, String, DateTime, ForeignKey, Enum as SQLEnum, UniqueConstraint
 from sqlalchemy.orm import relationship
 import enum
 
 from app.models.base import Base
 from app.models.user import GUID
+from app.core.database import utc_now
 
 
 class MemberRole(str, enum.Enum):
@@ -35,7 +35,7 @@ class Household(Base):
     id = Column(GUID(), primary_key=True, default=uuid.uuid4, index=True)
     name = Column(String, nullable=False)
     created_by = Column(GUID(), ForeignKey("users.id"), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
 
     # Relationships
     members = relationship(
@@ -61,7 +61,7 @@ class HouseholdMember(Base):
     user_id = Column(GUID(), ForeignKey("users.id"), nullable=False)
     household_id = Column(GUID(), ForeignKey("households.id"), nullable=False)
     role = Column(SQLEnum(MemberRole), nullable=False, default=MemberRole.MEMBER)
-    joined_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    joined_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
 
     # Relationships
     household = relationship("Household", back_populates="members")
@@ -84,9 +84,9 @@ class HouseholdInvite(Base):
     email = Column(String, nullable=False)
     token = Column(String, unique=True, nullable=False, index=True)
     status = Column(SQLEnum(InviteStatus), nullable=False, default=InviteStatus.PENDING)
-    expires_at = Column(DateTime, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
     created_by = Column(GUID(), ForeignKey("users.id"), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
 
     # Relationships
     household = relationship("Household", back_populates="invites")

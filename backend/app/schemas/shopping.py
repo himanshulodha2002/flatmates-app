@@ -5,7 +5,7 @@ Pydantic schemas for shopping list management.
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from decimal import Decimal
 
 from app.models.shopping import ShoppingListStatus
@@ -24,15 +24,14 @@ class ItemCategoryCreate(BaseModel):
 class ItemCategoryResponse(BaseModel):
     """Response schema for item category operations."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     name: str
     icon: Optional[str] = None
     color: Optional[str] = None
     household_id: Optional[UUID] = None
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 # Shopping List schemas
@@ -55,6 +54,8 @@ class ShoppingListUpdate(BaseModel):
 class ShoppingListResponse(BaseModel):
     """Response schema for shopping list operations."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     household_id: UUID
     name: str
@@ -63,9 +64,6 @@ class ShoppingListResponse(BaseModel):
     created_by: UUID
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 # Shopping List Item schemas
@@ -119,6 +117,8 @@ class ShoppingListItemPurchaseUpdate(BaseModel):
 class ShoppingListItemResponse(BaseModel):
     """Response schema for shopping list item operations."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     shopping_list_id: UUID
     name: str
@@ -140,12 +140,11 @@ class ShoppingListItemResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
-
 
 class ShoppingListItemWithDetails(BaseModel):
     """Shopping list item schema with user details."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: UUID
     shopping_list_id: UUID
@@ -173,12 +172,11 @@ class ShoppingListItemWithDetails(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
-
 
 class ShoppingListWithItems(BaseModel):
     """Shopping list schema with all items."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: UUID
     household_id: UUID
@@ -191,9 +189,6 @@ class ShoppingListWithItems(BaseModel):
     created_at: datetime
     updated_at: datetime
     items: list[ShoppingListItemWithDetails] = []
-
-    class Config:
-        from_attributes = True
 
 
 class ShoppingListFilterParams(BaseModel):

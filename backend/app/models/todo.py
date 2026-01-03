@@ -3,13 +3,13 @@ Todo models for managing tasks in households.
 """
 
 import uuid
-from datetime import datetime
 from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 import enum
 
 from app.models.base import Base
 from app.models.user import GUID
+from app.core.database import utc_now
 
 
 class TodoStatus(str, enum.Enum):
@@ -51,9 +51,9 @@ class Todo(Base):
     parent_todo_id = Column(
         GUID(), ForeignKey("todos.id", ondelete="SET NULL"), nullable=True
     )
-    completed_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
     # Relationships
     household = relationship("Household")

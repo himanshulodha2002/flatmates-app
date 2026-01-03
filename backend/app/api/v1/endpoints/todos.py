@@ -3,7 +3,6 @@ Todo management endpoints.
 """
 
 import uuid
-from datetime import datetime
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -20,6 +19,7 @@ from app.schemas.todo import (
     TodoResponse,
     TodoWithDetails,
 )
+from app.core.database import utc_now
 
 router = APIRouter()
 
@@ -266,11 +266,11 @@ def update_todo(
 
     # Handle status change to completed
     if todo_data.status == TodoStatus.COMPLETED and todo.completed_at is None:
-        todo.completed_at = datetime.utcnow()
+        todo.completed_at = utc_now()
     elif todo_data.status != TodoStatus.COMPLETED and todo.completed_at is not None:
         todo.completed_at = None
 
-    todo.updated_at = datetime.utcnow()
+    todo.updated_at = utc_now()
     db.commit()
     db.refresh(todo)
 
@@ -294,11 +294,11 @@ def update_todo_status(
 
     # Handle completed_at timestamp
     if status_data.status == TodoStatus.COMPLETED and todo.completed_at is None:
-        todo.completed_at = datetime.utcnow()
+        todo.completed_at = utc_now()
     elif status_data.status != TodoStatus.COMPLETED and todo.completed_at is not None:
         todo.completed_at = None
 
-    todo.updated_at = datetime.utcnow()
+    todo.updated_at = utc_now()
     db.commit()
     db.refresh(todo)
 
@@ -356,7 +356,7 @@ def get_todo_stats(
         and_(
             Todo.household_id == household_id,
             Todo.status != TodoStatus.COMPLETED,
-            Todo.due_date < datetime.utcnow()
+            Todo.due_date < utc_now()
         )
     ).count()
 

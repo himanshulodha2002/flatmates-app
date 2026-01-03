@@ -417,3 +417,16 @@ export interface ExpenseState {
   analytics: PersonalExpenseAnalytics | null;
   loading: boolean;
 }
+
+// AI Suggestion types
+export interface TaskSuggestion {
+  title: string;
+  description: string;
+  priority: 'low' | 'medium' | 'high';
+  category: 'chores' | 'financial' | 'shopping' | 'maintenance' | 'other';
+  reasoning: string;
+}
+
+export interface TaskSuggestionsResponse {
+  suggestions: TaskSuggestion[];
+}

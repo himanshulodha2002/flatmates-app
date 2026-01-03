@@ -1,329 +1,415 @@
-# Backend Deployment Guide - DigitalOcean (GitHub Education Pack)
+# Flatmates App - Deployment Guide 🚀
 
-This guide will help you deploy the Flatmates backend to DigitalOcean using your **$200 free credit** from the GitHub Education Pack.
+**Deploy your app in 15 minutes - FREE for 20-100+ months!**
 
-## Prerequisites
+## 💰 Cost Summary (Azure - Recommended!)
 
-1. GitHub Education Pack access
-2. Google OAuth credentials
-3. (Optional) OpenAI or Gemini API key for AI features
+| Service | Monthly Cost | Free Duration |
+|---------|--------------|---------------|
+| **Azure Container Apps** | **$0-5/mo** | **20-100+ months** ($100 credits) |
+| Neon PostgreSQL | FREE | Forever |
+| Sentry Monitoring | FREE | Forever (500K events/mo) |
+| Expo APK Builds | FREE | Forever (15 builds/mo) |
+| Gemini AI | FREE | Forever (60 req/min) |
+| **Total** | **~$0-5/mo** | **FREE for 20-100+ months!** |
+
+### Why Azure Container Apps is the cheapest:
+- ✅ **Scale to zero** = Pay $0 when idle (no traffic = no cost!)
+- ✅ **Pay per request** pricing
+- ✅ FREE tier: 180K vCPU-sec, 360K GiB-sec, 2M requests/month
+- ✅ Perfect for apps with intermittent usage
 
 ---
 
-## Step 1: Claim DigitalOcean Credits
+## Part 1: Free Services Setup (5 min)
 
-1. Visit: https://education.github.com/pack
-2. Search for "DigitalOcean" in the pack
-3. Click "Get access to DigitalOcean"
-4. Sign up/login to DigitalOcean
-5. Verify you have **$200 credit** (valid for 1 year)
+### Step 1: Neon Database (FREE)
 
----
-
-## Step 2: Create PostgreSQL Database
-
-1. **Go to DigitalOcean Dashboard**
-2. Click **"Create"** → **"Databases"**
-3. Configure:
-   - **Database engine**: PostgreSQL
-   - **Version**: PostgreSQL 15 or later
-   - **Data center region**: Choose closest to your users
-   - **Plan**:
-     - Start with **Basic ($15/month)** - 1GB RAM, 10GB storage
-     - Your $200 credit covers 13+ months
-   - **Database name**: `flatmates-db`
-4. Click **"Create Database Cluster"**
-5. **Wait 3-5 minutes** for provisioning
-
-### Get Database Connection String
-
-1. In your database dashboard, go to **"Connection Details"**
-2. Copy the **"Connection String"** - looks like:
+1. Go to **https://neon.tech**
+2. Click **"Sign in with GitHub"**
+3. Create a new project:
+   - Name: `flatmates`
+   - Region: Choose closest to you
+4. Copy the **Connection String** from the dashboard
    ```
-   postgresql://doadmin:PASSWORD@your-db-host.db.ondigitalocean.com:25060/flatmates-db?sslmode=require
+   postgres://user:pass@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require
    ```
-3. **Save this** - you'll need it later
+5. ✅ Save this as your `DATABASE_URL`
+
+### Step 2: Sentry Monitoring (FREE with Student Pack)
+
+1. Go to **https://sentry.io/signup/**
+2. Sign up with GitHub (uses Student Pack benefits)
+3. Create a new project:
+   - Platform: **Python**
+   - Framework: **FastAPI**
+4. Copy the **DSN** from the setup page
+   ```
+   https://xxx@xxx.ingest.sentry.io/xxx
+   ```
+5. ✅ Save this as your `SENTRY_DSN`
+
+### Step 3: Azure Account ($100 FREE credits)
+
+1. Go to **https://portal.azure.com**
+2. Sign up / Log in with your Microsoft account
+3. If you have Azure for Students or credits:
+   - Verify at: **Cost Management + Billing → Credits**
+4. Get your Subscription ID:
+   ```bash
+   # Install Azure CLI
+   brew install azure-cli
+   
+   # Login
+   az login
+   
+   # Get subscription ID
+   az account show --query id -o tsv
+   ```
+5. ✅ Save this as your `AZURE_SUBSCRIPTION_ID`
+
+### Step 4: Expo Account (FREE)
+
+1. Go to **https://expo.dev/signup**
+2. Create account (use GitHub)
+3. Create an access token:
+   - Go to **Account Settings → Access Tokens**
+   - Create new token
+4. ✅ Save this as your `EXPO_TOKEN`
 
 ---
 
-## Step 3: Prepare Environment Variables
+## Part 2: Deploy Backend to Azure (5 min)
 
-Create a `.env.production` file with these values:
+### Prerequisites
 
-```env
-# Database (from Step 2)
-DATABASE_URL=postgresql://doadmin:PASSWORD@your-db-host.db.ondigitalocean.com:25060/flatmates-db?sslmode=require
+```bash
+# Install Terraform and Azure CLI (if not installed)
+brew install terraform azure-cli
 
-# Security (auto-generated)
-SECRET_KEY=your-secret-key-will-be-generated
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=10080
+# Login to Azure
+az login
 
-# CORS (will update after deployment)
-BACKEND_CORS_ORIGINS=["https://your-app.ondigitalocean.app"]
+# Verify
+terraform --version
+az account show
+```
 
-# Google OAuth (REQUIRED - you need to provide these)
-GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=YOUR_GOOGLE_CLIENT_SECRET
+### Step 1: Build & Push Docker Image (FREE with GitHub Container Registry!)
 
-# AI Features (OPTIONAL but recommended)
-OPENAI_API_KEY=sk-your-openai-key-here
-# OR
-GEMINI_API_KEY=your-gemini-api-key-here
+```bash
+# Set your GitHub username
+export GITHUB_USER="your-github-username"
+
+# Login to GitHub Container Registry
+echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_USER --password-stdin
+
+# Build the backend image
+cd backend
+docker build -t ghcr.io/$GITHUB_USER/flatmates-app/backend:latest --target production .
+
+# Push to GHCR (FREE!)
+docker push ghcr.io/$GITHUB_USER/flatmates-app/backend:latest
+cd ..
+```
+
+### Step 2: Deploy with Terraform
+
+```bash
+# 1. Navigate to terraform directory
+cd infrastructure/terraform-azure
+
+# 2. Copy example config
+cp terraform.tfvars.example terraform.tfvars
+
+# 3. Edit with your values
+nano terraform.tfvars  # or: code terraform.tfvars
+```
+
+**Fill in these values:**
+```hcl
+# Required
+azure_subscription_id = "your-subscription-id-from-az-account-show"
+neon_database_url     = "postgres://user:pass@ep-xxx.neon.tech/neondb?sslmode=require"
+
+# Update with your GitHub username
+github_repo = "YOUR_USERNAME/flatmates-app"
+
+# Optional but recommended
+sentry_dsn           = "https://xxx@xxx.ingest.sentry.io/xxx"
+google_client_id     = "your-google-oauth-client-id"
+google_client_secret = "your-google-oauth-secret"
+gemini_api_key       = "your-gemini-api-key"
+```
+
+```bash
+# 4. Initialize Terraform
+terraform init
+
+# 5. Preview what will be created
+terraform plan
+
+# 6. Deploy! (type 'yes' when prompted)
+terraform apply
+
+# 7. Get your API URL
+terraform output app_url
+```
+
+🎉 **Your backend is now live!**
+
+Example output:
+```
+app_url = "https://ca-flatmates-api-dev.bluewater-abc123.eastus.azurecontainerapps.io"
+```
+
+### Verify Deployment
+
+```bash
+# Check health endpoint (replace with your URL)
+curl https://ca-flatmates-api-dev.xxx.azurecontainerapps.io/health
+
+# Should return:
+# {"status":"healthy","version":"1.0.0"}
 ```
 
 ---
 
-## Step 4: Get Google OAuth Credentials
+## Part 3: Setup Mobile Builds (3 min)
 
-### A. Create Google Cloud Project
+### Add Expo Token to GitHub
 
-1. Go to: https://console.cloud.google.com/
-2. Click **"Select a Project"** → **"New Project"**
-3. Name: `flatmates-app`
-4. Click **"Create"**
+1. Go to your GitHub repo
+2. Navigate to **Settings → Secrets and variables → Actions**
+3. Click **New repository secret**
+4. Add:
+   - Name: `EXPO_TOKEN`
+   - Value: Your Expo token from Step 4
 
-### B. Enable Google+ API
+### Trigger First Build
 
-1. In your project, go to **"APIs & Services"** → **"Library"**
-2. Search for **"Google+ API"**
-3. Click **"Enable"**
+```bash
+# Commit and push to trigger automated build
+git add .
+git commit -m "chore: configure deployment"
+git push origin main
+```
 
-### C. Create OAuth Credentials
+### Manual Build (on-demand)
 
-1. Go to **"APIs & Services"** → **"Credentials"**
-2. Click **"Create Credentials"** → **"OAuth client ID"**
-3. Configure consent screen if prompted:
-   - User Type: **External**
-   - App name: `Flatmates App`
-   - User support email: your email
-   - Developer email: your email
-   - Click **"Save and Continue"** through all steps
-4. Create OAuth client ID:
-   - Application type: **Web application**
-   - Name: `Flatmates Backend`
-   - Authorized redirect URIs: Leave empty for now
-   - Click **"Create"**
-5. **Copy and save**:
-   - `GOOGLE_CLIENT_ID`
-   - `GOOGLE_CLIENT_SECRET`
+1. Go to GitHub → **Actions** tab
+2. Select **Mobile CI/CD** workflow
+3. Click **Run workflow**
+4. Choose build type: `preview` (recommended for testing)
+5. Click **Run workflow**
 
-### D. Add Mobile OAuth Client
-
-1. Create another OAuth client ID:
-   - Application type: **Android** (for mobile app)
-   - Name: `Flatmates Android App`
-   - Package name: `com.flatmates.app`
-   - SHA-1: You'll get this from Expo (run `eas credentials` later)
-2. Save the Web Client ID for the mobile app
+📱 **APK will be available on Expo dashboard in ~10-15 min**
 
 ---
 
-## Step 5: Deploy Backend to DigitalOcean App Platform
+## Part 4: Connect Mobile to Backend (2 min)
 
-### Option A: Deploy via GitHub (Recommended)
+Update your mobile app to point to the deployed backend:
 
-1. **Push code to GitHub** (if not already done):
-   ```bash
-   git add .
-   git commit -m "Prepare for deployment"
-   git push origin main
-   ```
+```bash
+cd mobile
+```
 
-2. **Create App on DigitalOcean**:
-   - Go to **"Apps"** → **"Create App"**
-   - Choose **"GitHub"**
-   - Authorize DigitalOcean to access your repo
-   - Select repository: `flatmates-app`
-   - Branch: `main`
-   - Source Directory: `/backend`
-   - Autodeploy: **Enabled** ✓
+Create or edit environment config:
 
-3. **Configure App**:
-   - **Name**: `flatmates-api`
-   - **Region**: Same as database
-   - **Detected Source**: Python
-   - **Build Command**: `pip install -r requirements.txt`
-   - **Run Command**: `uvicorn app.main:app --host 0.0.0.0 --port 8080`
-   - **HTTP Port**: 8080
-   - **Instance Size**: Basic ($5/month)
+```typescript
+// src/config/api.ts
+export const API_URL = "https://ca-flatmates-api-dev.xxx.azurecontainerapps.io";
+```
 
-4. **Add Environment Variables**:
-   Click **"Environment Variables"** and add:
+Or use environment variables:
 
-   | Key | Value | Type |
-   |-----|-------|------|
-   | DATABASE_URL | (from Step 2) | Secret |
-   | SECRET_KEY | (generate random 32 chars) | Secret |
-   | ALGORITHM | HS256 | Plain Text |
-   | ACCESS_TOKEN_EXPIRE_MINUTES | 10080 | Plain Text |
-   | GOOGLE_CLIENT_ID | (from Step 4) | Secret |
-   | GOOGLE_CLIENT_SECRET | (from Step 4) | Secret |
-   | BACKEND_CORS_ORIGINS | `["*"]` (temporary) | Plain Text |
-   | OPENAI_API_KEY | (optional) | Secret |
-   | GEMINI_API_KEY | (optional) | Secret |
-
-   To generate SECRET_KEY:
-   ```bash
-   openssl rand -hex 32
-   ```
-
-5. **Review and Create**:
-   - Review all settings
-   - Click **"Create Resources"**
-   - Wait 5-10 minutes for deployment
-
-6. **Get Your Backend URL**:
-   - Once deployed, you'll see your app URL like:
-   - `https://flatmates-api-xxxxx.ondigitalocean.app`
-   - **Save this URL**
+```bash
+# .env
+API_URL=https://ca-flatmates-api-dev.xxx.azurecontainerapps.io
+```
 
 ---
 
-## Step 6: Run Database Migrations
+## ✅ Deployment Complete!
 
-1. **Open App Console**:
-   - In DigitalOcean App dashboard
-   - Click **"Console"** tab
-   - Click **"Run Command"**
+Your stack is now live:
 
-2. **Run migration**:
-   ```bash
-   alembic upgrade head
-   ```
-
-3. Verify: You should see migration output without errors
+| Component | URL | Status |
+|-----------|-----|--------|
+| **API** | `https://ca-flatmates-xxx.azurecontainerapps.io` | ✅ Live |
+| **Database** | Neon PostgreSQL | ✅ Connected |
+| **Monitoring** | sentry.io | ✅ Tracking errors |
+| **APK Builds** | expo.dev | ✅ Automated |
 
 ---
 
-## Step 7: Update Mobile App with Backend URL
+## 📱 Useful Commands
 
-1. **Update mobile/.env.production**:
-   ```env
-   EXPO_PUBLIC_API_URL=https://flatmates-api-xxxxx.ondigitalocean.app/api/v1
-   EXPO_PUBLIC_ENVIRONMENT=production
-   EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=YOUR_GOOGLE_WEB_CLIENT_ID
-   ```
+### View Logs
 
-2. **Rebuild the APK**:
-   ```bash
-   cd mobile
-   eas build --platform android --profile production
-   ```
+```bash
+# Stream logs
+az containerapp logs show \
+  --name ca-flatmates-api-dev \
+  --resource-group rg-flatmates-dev \
+  --follow
 
----
+# View recent logs
+az containerapp logs show \
+  --name ca-flatmates-api-dev \
+  --resource-group rg-flatmates-dev \
+  --tail 100
+```
 
-## Step 8: Update CORS Settings
+### Redeploy
 
-1. Update `BACKEND_CORS_ORIGINS` environment variable:
-   ```json
-   ["https://flatmates-api-xxxxx.ondigitalocean.app", "*"]
-   ```
-   (The `*` allows the mobile app to connect)
+```bash
+# Auto-redeploy on push (with GitHub Actions)
+git push origin main
 
----
+# Manual redeploy
+az containerapp update \
+  --name ca-flatmates-api-dev \
+  --resource-group rg-flatmates-dev \
+  --image ghcr.io/YOUR_USERNAME/flatmates-app/backend:latest
 
-## Step 9: Test Your Backend
+# Force redeploy via Terraform
+terraform apply -replace=azurerm_container_app.backend
+```
 
-1. **Visit API docs**:
-   ```
-   https://flatmates-api-xxxxx.ondigitalocean.app/docs
-   ```
-   You should see the FastAPI interactive documentation
+### Build APK Manually
 
-2. **Test health endpoint**:
-   ```
-   https://flatmates-api-xxxxx.ondigitalocean.app/health
-   ```
-   Should return: `{"status":"healthy"}`
+```bash
+cd mobile
 
-3. **Test from mobile app**:
-   - Install the APK on your phone
-   - Try logging in with Google
+# Preview build (for testing)
+eas build --platform android --profile preview
 
----
+# Production build
+eas build --platform android --profile production
+```
 
-## Cost Breakdown (with $200 credit)
+### Check Build Status
 
-| Service | Cost/Month | Duration |
-|---------|-----------|----------|
-| PostgreSQL Basic (1GB) | $15 | 13 months |
-| App Platform Basic | $5 | 40 months |
-| **Total** | **$20/month** | **~10 months free** |
-
-Your $200 credit covers approximately **10 months** of operation!
+- Expo Dashboard: https://expo.dev
+- GitHub Actions: Your repo → Actions tab
 
 ---
 
-## Troubleshooting
+## 🔧 Troubleshooting
 
-### Database Connection Issues
-- Verify DATABASE_URL includes `?sslmode=require`
-- Check database is in same region as app
-- Verify database firewall allows app access
+### "Database connection failed"
 
-### Migration Errors
-- Check DATABASE_URL is correct
-- Ensure database is running
-- Check app console for detailed errors
+- Verify Neon connection string has `?sslmode=require`
+- Check if Neon project is active (free tier pauses after 5 days of inactivity)
+- Wake it up by visiting the Neon dashboard
 
-### Google OAuth Not Working
-- Verify GOOGLE_CLIENT_ID and SECRET are correct
-- Check OAuth consent screen is configured
-- Ensure redirect URIs are correct
+### "Container failed to start" on Azure
 
-### CORS Errors from Mobile App
-- Temporarily set CORS to `["*"]` for testing
-- Check mobile app is using correct API URL
+```bash
+# Check logs
+az containerapp logs show \
+  --name ca-flatmates-api-dev \
+  --resource-group rg-flatmates-dev \
+  --tail 200
+```
 
----
+### "Image pull failed"
 
-## Next Steps
+- Make sure your GHCR image is public, or configure registry credentials
+- Verify the image name matches in Terraform config
 
-1. Set up monitoring and alerts in DigitalOcean
-2. Configure custom domain (optional)
-3. Set up backups for PostgreSQL database
-4. Review and tighten CORS settings for production
-5. Set up CI/CD for automatic deployments
+### "Health check failed"
 
----
+- Wait 2-3 minutes for the app to start
+- Check the `/health` endpoint manually
+- Review app logs for errors
 
-## Security Checklist
+### "EXPO_TOKEN not found"
 
-- [ ] Use strong SECRET_KEY (32+ random characters)
-- [ ] Keep all API keys as "Secret" environment variables
-- [ ] Enable database backups
-- [ ] Set proper CORS origins (no wildcards in production)
-- [ ] Review database access permissions
-- [ ] Enable 2FA on DigitalOcean account
-- [ ] Regularly update dependencies
+- Verify the secret is added in GitHub Settings → Secrets → Actions
+- Make sure the secret name is exactly `EXPO_TOKEN`
 
----
+### Neon database sleeping
 
-## Alternative: Deploy via Docker
+- Free tier pauses after 5 days of inactivity
+- Just access the API once to wake it up (automatic)
 
-If you prefer Docker:
+### Monitor Azure Costs
 
-1. Build image:
-   ```bash
-   docker build -t flatmates-backend ./backend
-   ```
+```bash
+# Check current spending
+az consumption usage list --output table
 
-2. Push to DigitalOcean Container Registry
-3. Deploy from container registry
-
-See DigitalOcean docs: https://docs.digitalocean.com/products/app-platform/
+# Set budget alert
+az consumption budget create \
+  --budget-name "flatmates-budget" \
+  --amount 10 \
+  --time-grain Monthly \
+  --category Cost
+```
 
 ---
 
-## Support Resources
+## 🔄 Updating Your App
 
-- DigitalOcean Docs: https://docs.digitalocean.com/
-- FastAPI Deployment: https://fastapi.tiangolo.com/deployment/
-- GitHub Education Pack: https://education.github.com/pack
+### Backend Changes
+
+```bash
+# Make changes, then:
+git add .
+git commit -m "feat: your changes"
+git push origin main
+# GitHub Actions auto-deploys in ~3-5 minutes
+```
+
+### Mobile Changes
+
+```bash
+# Changes auto-build APK on push to main
+git push origin main
+
+# Or trigger manual build:
+# GitHub → Actions → Mobile CI/CD → Run workflow
+```
 
 ---
 
-**Your backend will be live at**: `https://flatmates-api-[random].ondigitalocean.app`
+## 🧹 Cleanup (if needed)
 
-Remember to save all credentials securely!
+To destroy all resources and stop billing:
+
+```bash
+cd infrastructure/terraform-azure
+terraform destroy
+# Type 'yes' to confirm
+```
+
+Or delete resource group directly:
+```bash
+az group delete --name rg-flatmates-dev --yes
+```
+
+---
+
+## 📞 Support
+
+- **Azure**: https://docs.microsoft.com/azure
+- **Neon**: https://neon.tech/docs
+- **Expo**: https://docs.expo.dev
+- **Sentry**: https://docs.sentry.io
+
+---
+
+## 💡 Cost-Saving Tips
+
+1. **Scale to Zero**: Container Apps automatically scales to 0 replicas when idle = $0!
+2. **Use East US region**: Typically the cheapest Azure region
+3. **Keep FREE services**: Neon DB, Sentry, GHCR are all free
+4. **Set budget alerts**: Get notified before running out of credits
+5. **Check usage weekly**: `az consumption usage list`
+
+---
+
+**Happy deploying! 🎉**

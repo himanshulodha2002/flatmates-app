@@ -1,17 +1,65 @@
-version: '3.8'
+# Flatmates App - Docker Compose Configuration
+# Modern multi-environment setup with profiles
 
 services:
+  # =============================================================================
+  # Core Services
+  # =============================================================================
+  
   backend:
     build:
       context: .
       dockerfile: Dockerfile
+      target: ${BUILD_TARGET:-production}
     container_name: flatmates-backend
     ports:
-      - "8000:8000"
+      - "${API_PORT:-8000}:8000"
     environment:
       - DATABASE_URL=postgresql://flatmates:flatmates123@postgres:5432/flatmates
       - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
-      - BACKEND_CORS_ORIGINS=["http://localhost:3000","http://localhost:19006"]
+      - BACKEND_CORS_ORIGINS=["http://localhost:3000","http://localhost:8081","http://localhost:19006"]
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - flatmates-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    profiles:
+      - dev
+      - prod
+
+  # Development backend with hot-reload
+  backend-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: flatmates-backend-dev
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      - DATABASE_URL=postgresql://flatmates:flatmates123@postgres:5432/flatmates
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-for-development}
+      - BACKEND_CORS_ORIGINS=["http://localhost:3000","http://localhost:8081","http://localhost:19006","*"]
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - LOG_LEVEL=DEBUG
+      - ENVIRONMENT=development
     depends_on:
       postgres:
         condition: service_healthy
@@ -19,13 +67,11 @@ services:
       - flatmates-network
     restart: unless-stopped
     volumes:
-      - ./app:/app/app
-    healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      - ./app:/app/app:cached
+      - ./tests:/app/tests:cached
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    profiles:
+      - dev-hot
 
   postgres:
     image: postgres:16-alpine
@@ -35,20 +81,172 @@ services:
       - POSTGRES_PASSWORD=flatmates123
       - POSTGRES_DB=flatmates
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - flatmates-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U flatmates"]
+      test: ["CMD-SHELL", "pg_isready -U flatmates -d flatmates"]
       interval: 10s
       timeout: 5s
       retries: 5
+    profiles:
+      - dev
+      - dev-hot
+      - prod
+      - test
+
+  # =============================================================================
+  # Caching Layer
+  # =============================================================================
+  
+  redis:
+    image: redis:7-alpine
+    container_name: flatmates-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - flatmates-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy volatile-lru
+    profiles:
+      - dev
+      - dev-hot
+      - prod
+
+  # =============================================================================
+  # Observability Stack
+  # =============================================================================
+  
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:v2.53.3
+    container_name: flatmates-prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - flatmates-network
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+      - '--storage.tsdb.retention.time=7d'
+    profiles:
+      - observability
+
+  # Grafana for dashboards
+  grafana:
+    image: grafana/grafana:11.3.0
+    container_name: flatmates-grafana
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./infrastructure/grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - flatmates-network
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    profiles:
+      - observability
+
+  # Loki for log aggregation
+  loki:
+    image: grafana/loki:3.2.1
+    container_name: flatmates-loki
+    ports:
+      - "${LOKI_PORT:-3100}:3100"
+    volumes:
+      - ./infrastructure/loki/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
+    networks:
+      - flatmates-network
+    restart: unless-stopped
+    command: -config.file=/etc/loki/local-config.yaml
+    profiles:
+      - observability
+
+  # =============================================================================
+  # Database Tools
+  # =============================================================================
+
+  # pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:8.13
+    container_name: flatmates-pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL:-admin@flatmates.local}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:-admin}
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - flatmates-network
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    profiles:
+      - tools
+
+  # =============================================================================
+  # Testing
+  # =============================================================================
+
+  # Test database
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: flatmates-postgres-test
+    environment:
+      - POSTGRES_USER=testuser
+      - POSTGRES_PASSWORD=testpass
+      - POSTGRES_DB=testdb
+    ports:
+      - "${TEST_DB_PORT:-5433}:5432"
+    networks:
+      - flatmates-network
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U testuser -d testdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    profiles:
+      - test
 
 volumes:
   postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+  loki-data:
+    driver: local
+  pgadmin-data:
     driver: local
 
 networks:

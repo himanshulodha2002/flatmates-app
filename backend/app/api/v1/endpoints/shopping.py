@@ -3,7 +3,6 @@ Shopping list management endpoints.
 """
 
 import uuid
-from datetime import datetime
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -28,6 +27,7 @@ from app.schemas.shopping import (
     ItemCategoryResponse,
     ShoppingListStats,
 )
+from app.core.database import utc_now
 
 router = APIRouter()
 
@@ -266,7 +266,7 @@ def update_shopping_list(
     if list_data.status is not None:
         shopping_list.status = list_data.status
 
-    shopping_list.updated_at = datetime.utcnow()
+    shopping_list.updated_at = utc_now()
 
     db.commit()
     db.refresh(shopping_list)
@@ -465,7 +465,7 @@ def update_shopping_list_item(
         item.is_purchased = item_data.is_purchased
         if item_data.is_purchased:
             item.checked_off_by = current_user.id
-            item.checked_off_at = datetime.utcnow()
+            item.checked_off_at = utc_now()
         else:
             item.checked_off_by = None
             item.checked_off_at = None
@@ -484,7 +484,7 @@ def update_shopping_list_item(
     if item_data.position is not None:
         item.position = item_data.position
 
-    item.updated_at = datetime.utcnow()
+    item.updated_at = utc_now()
 
     db.commit()
     db.refresh(item)
@@ -520,12 +520,12 @@ def toggle_item_purchase_status(
     item.is_purchased = purchase_data.is_purchased
     if purchase_data.is_purchased:
         item.checked_off_by = current_user.id
-        item.checked_off_at = datetime.utcnow()
+        item.checked_off_at = utc_now()
     else:
         item.checked_off_by = None
         item.checked_off_at = None
 
-    item.updated_at = datetime.utcnow()
+    item.updated_at = utc_now()
 
     db.commit()
     db.refresh(item)

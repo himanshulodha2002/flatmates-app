@@ -1,0 +1,53 @@
+# =============================================================================
+# DigitalOcean + Free Services Terraform Variables
+# Copy to terraform.tfvars and fill in your values
+# =============================================================================
+# Total Cost: ~$5/month (with $200 GitHub Student credits = 40 months FREE!)
+# =============================================================================
+
+# =============================================================================
+# 1. DigitalOcean API Token ($200 FREE credits with GitHub Student!)
+#    Get it from: https://cloud.digitalocean.com/account/api/tokens
+#    Redeem credits: https://cloud.digitalocean.com/account/billing (promo code)
+# =============================================================================
+do_token = "dop_v1_your_token_here"
+
+# =============================================================================
+# 2. Neon PostgreSQL (100% FREE!)
+#    Sign up: https://neon.tech (use GitHub login for student benefits)
+#    Steps:
+#      1. Create new project
+#      2. Go to Dashboard > Connection Details  
+#      3. Copy the "Connection string" (starts with postgres://...)
+# =============================================================================
+neon_database_url = "postgres://username:password@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require"
+
+# =============================================================================
+# 3. Sentry Error Monitoring (FREE with GitHub Student Pack!)
+#    Sign up: https://sentry.io/signup/ 
+#    Use GitHub Student Pack for 500K events/month FREE
+#    Steps:
+#      1. Create organization
+#      2. Create new project (Python / FastAPI)
+#      3. Copy the DSN from project settings
+# =============================================================================
+sentry_dsn = ""
+
+# =============================================================================
+# Project Settings
+# =============================================================================
+project_name = "flatmates"
+environment  = "dev"
+region       = "nyc1"  # Options: nyc1, nyc3, sfo3, ams3, lon1, sgp1, blr1
+
+# =============================================================================
+# Optional: Google OAuth (for Google Sign-In)
+# =============================================================================
+google_client_id     = ""
+google_client_secret = ""
+
+# =============================================================================
+# Optional: AI API Key (Gemini is FREE with limits!)
+# Get from: https://makersuite.google.com/app/apikey
+# =============================================================================
+gemini_api_key = ""

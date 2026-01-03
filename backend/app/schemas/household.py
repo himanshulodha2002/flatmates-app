@@ -5,7 +5,7 @@ Pydantic schemas for household management.
 from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from app.models.household import MemberRole, InviteStatus
 
@@ -26,18 +26,19 @@ class HouseholdUpdate(BaseModel):
 class HouseholdBase(BaseModel):
     """Base household schema."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     name: str
     created_by: UUID
     created_at: datetime
 
-    class Config:
-        from_attributes = True
-
 
 # Member schemas
 class MemberBase(BaseModel):
     """Base member schema."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: UUID
     user_id: UUID
@@ -45,12 +46,11 @@ class MemberBase(BaseModel):
     role: MemberRole
     joined_at: datetime
 
-    class Config:
-        from_attributes = True
-
 
 class MemberWithUser(BaseModel):
     """Member schema with user details."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: UUID
     user_id: UUID
@@ -59,9 +59,6 @@ class MemberWithUser(BaseModel):
     email: str
     full_name: str
     profile_picture_url: Optional[str] = None
-
-    class Config:
-        from_attributes = True
 
 
 class MemberRoleUpdate(BaseModel):
@@ -80,6 +77,8 @@ class InviteCreate(BaseModel):
 class InviteResponse(BaseModel):
     """Schema for invite response."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     household_id: UUID
     email: str
@@ -87,9 +86,6 @@ class InviteResponse(BaseModel):
     status: InviteStatus
     expires_at: datetime
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class JoinHouseholdRequest(BaseModel):
@@ -102,24 +98,22 @@ class JoinHouseholdRequest(BaseModel):
 class HouseholdWithMembers(BaseModel):
     """Household schema with members list."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     name: str
     created_by: UUID
     created_at: datetime
     members: List[MemberWithUser]
 
-    class Config:
-        from_attributes = True
-
 
 class HouseholdResponse(BaseModel):
     """Response schema for household operations."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: UUID
     name: str
     created_by: UUID
     created_at: datetime
     member_count: Optional[int] = None
-
-    class Config:
-        from_attributes = True

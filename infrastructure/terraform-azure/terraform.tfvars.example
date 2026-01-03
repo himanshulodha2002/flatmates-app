@@ -1,0 +1,60 @@
+# =============================================================================
+# Azure Container Apps + Free Services Terraform Variables
+# Copy to terraform.tfvars and fill in your values
+# =============================================================================
+# Total Cost: ~$0-5/month (with $100 Azure credits = 20-100+ months!)
+# Uses CONSUMPTION pricing = pay only for what you use!
+# =============================================================================
+
+# =============================================================================
+# 1. Azure Subscription ID (Required)
+#    Find it: az account show --query id -o tsv
+#    Or: Azure Portal > Subscriptions
+# =============================================================================
+azure_subscription_id = "your-subscription-id-here"
+
+# =============================================================================
+# 2. Neon PostgreSQL (100% FREE!) - Keep using this!
+#    Sign up: https://neon.tech (use GitHub login for student benefits)
+#    Steps:
+#      1. Create new project
+#      2. Go to Dashboard > Connection Details  
+#      3. Copy the "Connection string" (starts with postgres://...)
+# =============================================================================
+neon_database_url = "postgres://username:password@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require"
+
+# =============================================================================
+# 3. Sentry Error Monitoring (FREE with GitHub Student Pack!)
+#    Sign up: https://sentry.io/signup/ 
+#    Use GitHub Student Pack for 500K events/month FREE
+# =============================================================================
+sentry_dsn = ""
+
+# =============================================================================
+# Project Settings
+# =============================================================================
+project_name = "flatmates"
+environment  = "dev"
+
+# COST TIP: Use cheaper regions!
+# Cheapest: "eastus", "centralus", "westus2"
+# Also cheap: "northeurope", "eastasia"
+location = "eastus"
+
+# =============================================================================
+# GitHub Repository (for container image)
+# Used to pull from GitHub Container Registry (FREE!)
+# =============================================================================
+github_repo = "himanshulodha2002/flatmates-app"
+
+# =============================================================================
+# Optional: Google OAuth (for Google Sign-In)
+# =============================================================================
+google_client_id     = ""
+google_client_secret = ""
+
+# =============================================================================
+# Optional: AI API Key (Gemini is FREE with limits!)
+#    Get key: https://makersuite.google.com/app/apikey
+# =============================================================================
+gemini_api_key = ""
