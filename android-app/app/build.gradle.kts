@@ -36,8 +36,9 @@ android {
             
         }
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
+            // Disabled minification temporarily due to memory constraints in dev container
+            isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
