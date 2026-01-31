@@ -159,8 +159,8 @@ data class HouseholdDto(
     val createdBy: String,
     @SerialName("created_at")
     val createdAt: String,
-    @SerialName("invite_code")
-    val inviteCode: String? = null
+    @SerialName("member_count")
+    val memberCount: Int? = null
 )
 
 @Serializable
@@ -170,8 +170,7 @@ data class CreateHouseholdRequest(
 
 @Serializable
 data class JoinHouseholdRequest(
-    @SerialName("invite_code")
-    val inviteCode: String
+    val token: String
 )
 
 @Serializable
@@ -185,4 +184,23 @@ data class HouseholdMemberDto(
     @SerialName("joined_at")
     val joinedAt: String,
     val user: UserDto? = null
+)
+
+@Serializable
+data class InviteCreateRequest(
+    val email: String
+)
+
+@Serializable
+data class InviteDto(
+    val id: String,
+    @SerialName("household_id")
+    val householdId: String,
+    val email: String,
+    val token: String,
+    val status: String,
+    @SerialName("expires_at")
+    val expiresAt: String,
+    @SerialName("created_at")
+    val createdAt: String
 )

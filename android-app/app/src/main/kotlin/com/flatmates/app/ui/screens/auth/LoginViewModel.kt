@@ -1,10 +1,13 @@
 package com.flatmates.app.ui.screens.auth
 
 import android.content.Intent
+import android.util.Log
 import androidx.activity.result.IntentSenderRequest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.flatmates.app.auth.AuthManager
+import com.flatmates.app.auth.BeginSignInResult
+import com.flatmates.app.auth.GetTokenResult
 import com.flatmates.app.auth.GoogleAuthClient
 import com.flatmates.app.data.sync.SyncManager
 import com.flatmates.app.domain.util.Result
@@ -12,6 +15,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+private const val TAG = "LoginViewModel"
 
 data class LoginUiState(
     val isLoading: Boolean = false,
@@ -52,17 +57,24 @@ class LoginViewModel @Inject constructor(
     
     fun startGoogleSignIn() {
         viewModelScope.launch {
+            Log.d(TAG, "Starting Google Sign-In")
             _uiState.update { it.copy(isLoading = true, error = null) }
             
-            val intentSender = googleAuthClient.beginSignIn()
-            if (intentSender != null) {
-                _events.emit(LoginEvent.ShowSignInIntent(intentSender))
-            } else {
-                _uiState.update { 
-                    it.copy(
-                        isLoading = false, 
-                        error = "Google Sign-In is unavailable. Please check your Google Play Services."
-                    )
+            when (val result = googleAuthClient.beginSignIn()) {
+                is BeginSignInResult.Success -> {
+                    Log.d(TAG, "Sign-in intent created, launching...")
+                    _events.emit(LoginEvent.ShowSignInIntent(result.intentSenderRequest))
+                }
+                is BeginSignInResult.Error -> {
+                    Log.e(TAG, "Sign-in failed: ${result.message}")
+                    _uiState.update { 
+                        it.copy(isLoading = false, error = result.message)
+                    }
+                    _events.emit(LoginEvent.ShowError(result.message))
+                }
+                is BeginSignInResult.Cancelled -> {
+                    Log.d(TAG, "Sign-in was cancelled")
+                    _uiState.update { it.copy(isLoading = false) }
                 }
             }
         }
@@ -70,38 +82,43 @@ class LoginViewModel @Inject constructor(
     
     fun handleSignInResult(intent: Intent?) {
         viewModelScope.launch {
+            Log.d(TAG, "Handling sign-in result, intent=${intent != null}")
             if (intent == null) {
+                Log.e(TAG, "Sign-in result intent is null")
                 _uiState.update { it.copy(isLoading = false, error = "Sign-in was cancelled") }
                 return@launch
             }
             
-            val idToken = googleAuthClient.getIdTokenFromIntent(intent)
-            if (idToken == null) {
-                _uiState.update { 
-                    it.copy(
-                        isLoading = false, 
-                        error = "Failed to get credentials from Google"
-                    ) 
-                }
-                return@launch
-            }
-            
-            when (val result = authManager.signInWithGoogle(idToken)) {
-                is Result.Success -> {
-                    _uiState.update { it.copy(isLoading = false, isLoggedIn = true) }
-                    syncManager.schedulePeriodicSync()
-                    syncManager.requestImmediateSync()
-                    _events.emit(LoginEvent.NavigateToHome)
-                }
-                is Result.Error -> {
-                    val errorMessage = result.message ?: result.exception?.message ?: "Sign-in failed"
-                    _uiState.update { 
-                        it.copy(isLoading = false, error = errorMessage) 
+            when (val tokenResult = googleAuthClient.getIdTokenFromIntent(intent)) {
+                is GetTokenResult.Success -> {
+                    Log.d(TAG, "Got ID token, sending to backend...")
+                    when (val result = authManager.signInWithGoogle(tokenResult.idToken)) {
+                        is Result.Success -> {
+                            Log.d(TAG, "Backend sign-in successful!")
+                            _uiState.update { it.copy(isLoading = false, isLoggedIn = true) }
+                            syncManager.schedulePeriodicSync()
+                            syncManager.requestImmediateSync()
+                            _events.emit(LoginEvent.NavigateToHome)
+                        }
+                        is Result.Error -> {
+                            val errorMessage = result.message ?: result.exception?.message ?: "Sign-in failed"
+                            Log.e(TAG, "Backend sign-in failed: $errorMessage")
+                            _uiState.update { 
+                                it.copy(isLoading = false, error = errorMessage) 
+                            }
+                            _events.emit(LoginEvent.ShowError(errorMessage))
+                        }
+                        is Result.Loading -> {
+                            // Should not happen
+                        }
                     }
-                    _events.emit(LoginEvent.ShowError(errorMessage))
                 }
-                is Result.Loading -> {
-                    // Should not happen
+                is GetTokenResult.Error -> {
+                    Log.e(TAG, "Failed to get ID token: ${tokenResult.message}")
+                    _uiState.update { 
+                        it.copy(isLoading = false, error = tokenResult.message) 
+                    }
+                    _events.emit(LoginEvent.ShowError(tokenResult.message))
                 }
             }
         }

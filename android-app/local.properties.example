@@ -6,3 +6,11 @@
 
 # Optional: NDK location if needed
 # ndk.dir=/path/to/your/Android/Sdk/ndk/version
+
+# Google OAuth Web Client ID (required for Google Sign-In)
+# Get this from Google Cloud Console: https://console.cloud.google.com/apis/credentials
+# Create an OAuth 2.0 Client ID of type "Web application"
+GOOGLE_WEB_CLIENT_ID=your-client-id.apps.googleusercontent.com
+
+# Optional: Backend API URL (defaults to Azure dev server)
+# API_BASE_URL=https://your-backend-url.com/

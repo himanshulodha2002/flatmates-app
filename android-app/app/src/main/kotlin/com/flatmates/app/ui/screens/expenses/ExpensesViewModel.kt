@@ -33,8 +33,7 @@ data class ExpensesUiState(
     val totalOwed: BigDecimal = BigDecimal.ZERO,
     val totalOwing: BigDecimal = BigDecimal.ZERO,
     val isLoading: Boolean = true,
-    val error: String? = null,
-    val currentUserId: String = ""
+    val error: String? = null
 )
 
 /**

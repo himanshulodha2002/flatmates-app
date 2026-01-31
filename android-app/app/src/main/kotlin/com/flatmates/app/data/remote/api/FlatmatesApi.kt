@@ -7,7 +7,7 @@ import retrofit2.http.*
 interface FlatmatesApi : AuthApi, SyncApi {
     
     // Households
-    @GET("api/v1/households")
+    @GET("api/v1/households/mine")
     suspend fun getHouseholds(): Response<List<HouseholdDto>>
     
     @POST("api/v1/households")
@@ -42,13 +42,19 @@ interface FlatmatesApi : AuthApi, SyncApi {
     ): Response<Unit>
     
     @POST("api/v1/households/{id}/invite")
-    suspend fun regenerateInviteCode(
-        @Path("id") householdId: String
-    ): Response<HouseholdDto>
+    suspend fun createInvite(
+        @Path("id") householdId: String,
+        @Body request: InviteCreateRequest
+    ): Response<InviteDto>
     
     @DELETE("api/v1/households/{id}/members/{memberId}")
     suspend fun removeMember(
         @Path("id") householdId: String,
         @Path("memberId") memberId: String
+    ): Response<Unit>
+    
+    @POST("api/v1/households/{id}/leave")
+    suspend fun leaveHousehold(
+        @Path("id") householdId: String
     ): Response<Unit>
 }

@@ -9,9 +9,16 @@ from google.auth.transport import requests as google_requests
 
 from app.api.deps import get_db, get_current_user
 from app.core.config import settings
-from app.core.security import create_access_token
+from app.core.security import create_access_token, decode_access_token
 from app.models.user import User
-from app.schemas.auth import GoogleTokenRequest, TokenResponse, UserResponse, UserUpdate
+from app.schemas.auth import (
+    GoogleTokenRequest,
+    TokenResponse,
+    UserResponse,
+    UserUpdate,
+    RefreshTokenRequest,
+    RefreshTokenResponse,
+)
 
 router = APIRouter()
 
@@ -80,11 +87,16 @@ async def google_login_mobile(token_request: GoogleTokenRequest, db: Session = D
                 db.commit()
                 db.refresh(user)
 
-        # Create JWT access token
+        # Create JWT access token (also serves as refresh token for simplicity)
         access_token = create_access_token(data={"sub": str(user.id)})
+        expires_in = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60  # Convert to seconds
 
         return TokenResponse(
-            access_token=access_token, token_type="bearer", user=UserResponse.model_validate(user)
+            access_token=access_token,
+            refresh_token=access_token,  # Same token for simplicity
+            token_type="bearer",
+            expires_in=expires_in,
+            user=UserResponse.model_validate(user),
         )
 
     except ValueError as e:
@@ -96,6 +108,55 @@ async def google_login_mobile(token_request: GoogleTokenRequest, db: Session = D
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Authentication failed: {str(e)}",
+        )
+
+
+@router.post("/refresh", response_model=RefreshTokenResponse, status_code=status.HTTP_200_OK)
+async def refresh_token(request: RefreshTokenRequest, db: Session = Depends(get_db)):
+    """
+    Refresh an access token using a refresh token.
+    
+    For simplicity, we use the same JWT token as both access and refresh token.
+    The token is validated and a new one is issued.
+    """
+    try:
+        payload = decode_access_token(request.refresh_token)
+        if payload is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired refresh token",
+            )
+        
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token payload",
+            )
+        
+        # Verify user exists and is active
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user or not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found or inactive",
+            )
+        
+        # Create new access token
+        new_access_token = create_access_token(data={"sub": str(user.id)})
+        expires_in = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+        
+        return RefreshTokenResponse(
+            access_token=new_access_token,
+            expires_in=expires_in,
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Token refresh failed: {str(e)}",
         )
 
 

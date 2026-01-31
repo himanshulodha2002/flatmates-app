@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -6,9 +8,29 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
+// Load local.properties
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(localPropertiesFile.inputStream())
+}
+
+// Get Google Web Client ID from environment or local.properties
+val googleWebClientId = System.getenv("GOOGLE_WEB_CLIENT_ID") 
+    ?: localProperties.getProperty("GOOGLE_WEB_CLIENT_ID", "")
+
 android {
     namespace = "com.flatmates.app"
     compileSdk = 34
+
+    signingConfigs {
+        create("release") {
+            storeFile = file("${rootProject.projectDir}/flatmates.keystore")
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "qwerty"
+            keyAlias = "flatmates"
+            keyPassword = System.getenv("KEY_PASSWORD") ?: "qwerty"
+        }
+    }
 
     defaultConfig {
         applicationId = "com.flatmates.app"
@@ -25,20 +47,20 @@ android {
 
         // Build config for API URL and Google Web Client ID
         buildConfigField("String", "API_BASE_URL", "\"${System.getenv("API_BASE_URL") ?: "https://ca-flatmates-api-dev.wittytree-0de572ba.southeastasia.azurecontainerapps.io/"}\"")
-        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${System.getenv("GOOGLE_WEB_CLIENT_ID") ?: ""}\"")
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${googleWebClientId}\"")
     }
 
     buildTypes {
         debug {
             isMinifyEnabled = false
-            buildConfigField("String", "API_BASE_URL", "\"${System.getenv("API_BASE_URL") ?: "http://10.0.2.2:8000/"}\"")
-            buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${System.getenv("GOOGLE_WEB_CLIENT_ID") ?: ""}\"")
-            
+            // Using Azure backend URL for debug builds
+            buildConfigField("String", "API_BASE_URL", "\"${System.getenv("API_BASE_URL") ?: "https://ca-flatmates-api-dev.wittytree-0de572ba.southeastasia.azurecontainerapps.io/"}\"")
         }
         release {
             // Disabled minification temporarily due to memory constraints in dev container
             isMinifyEnabled = false
             isShrinkResources = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

@@ -32,7 +32,7 @@ class AuthManager @Inject constructor(
                 // Save tokens
                 tokenManager.saveTokens(
                     accessToken = authResponse.accessToken,
-                    refreshToken = authResponse.refreshToken,
+                    refreshToken = authResponse.refreshToken ?: authResponse.accessToken, // Use access token as fallback
                     expiresIn = authResponse.expiresIn,
                     userId = authResponse.user.id
                 )

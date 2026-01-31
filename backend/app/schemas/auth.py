@@ -26,8 +26,23 @@ class TokenResponse(BaseModel):
     """Schema for token response."""
 
     access_token: str
+    refresh_token: Optional[str] = None
     token_type: str = "bearer"
+    expires_in: int = 604800  # 7 days in seconds
     user: UserResponse
+
+
+class RefreshTokenRequest(BaseModel):
+    """Schema for refresh token request."""
+    
+    refresh_token: str
+
+
+class RefreshTokenResponse(BaseModel):
+    """Schema for refresh token response."""
+    
+    access_token: str
+    expires_in: int = 604800  # 7 days in seconds
 
 
 class GoogleTokenRequest(BaseModel):

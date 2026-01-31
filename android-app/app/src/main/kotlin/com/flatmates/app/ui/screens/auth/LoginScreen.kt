@@ -1,6 +1,8 @@
 package com.flatmates.app.ui.screens.auth
 
 import android.app.Activity.RESULT_CANCELED
+import android.app.Activity.RESULT_OK
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -31,10 +33,18 @@ fun LoginScreen(
     val signInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult()
     ) { result ->
-        if (result.resultCode == RESULT_CANCELED) {
-            viewModel.handleSignInCancelled()
-        } else {
-            viewModel.handleSignInResult(result.data)
+        Log.d("LoginScreen", "Sign-in result received: resultCode=${result.resultCode}, data=${result.data != null}")
+        when (result.resultCode) {
+            RESULT_OK -> {
+                viewModel.handleSignInResult(result.data)
+            }
+            RESULT_CANCELED -> {
+                viewModel.handleSignInCancelled()
+            }
+            else -> {
+                Log.e("LoginScreen", "Unexpected result code: ${result.resultCode}")
+                viewModel.handleSignInCancelled()
+            }
         }
     }
     
@@ -63,13 +73,8 @@ fun LoginScreen(
         viewModel.checkExistingAuth()
     }
     
-    // Navigate on successful login
-    LaunchedEffect(uiState.isLoggedIn) {
-        if (uiState.isLoggedIn) {
-            onLoginSuccess()
-        }
-    }
-    
+    // Note: Navigation is handled by LoginEvent.NavigateToHome to avoid duplicate triggers
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->

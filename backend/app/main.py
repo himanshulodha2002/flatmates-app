@@ -18,7 +18,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.config import settings
-from app.core.database import get_db
+from app.core.database import get_db, get_db_resilient
 from app.core.logging import setup_logging, get_logger, log_context, clear_log_context
 from app.core.metrics import (
     get_metrics,
@@ -283,9 +283,12 @@ def with_timeout(seconds: int = 30):
 # =============================================================================
 
 @app.get("/health")
-async def health_check(db: Session = Depends(get_db)):
+async def health_check(db: Session = Depends(get_db_resilient)):
     """
     Health check endpoint to verify API and database status.
+    
+    Uses resilient database connection with retry logic for serverless
+    database cold starts (e.g., Neon PostgreSQL).
 
     Returns:
         JSON response with health status
@@ -311,9 +314,12 @@ async def health_check(db: Session = Depends(get_db)):
 
 
 @app.get("/health/deep")
-async def deep_health_check(db: Session = Depends(get_db)):
+async def deep_health_check(db: Session = Depends(get_db_resilient)):
     """
     Deep health check including database connectivity with detailed diagnostics.
+    
+    Uses resilient database connection with retry logic for serverless
+    database cold starts (e.g., Neon PostgreSQL).
     
     Returns:
         JSON response with detailed health information including:

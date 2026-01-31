@@ -93,18 +93,21 @@ ENV PATH="/opt/venv/bin:$PATH"
 COPY app/ ./app/
 COPY alembic/ ./alembic/
 COPY alembic.ini ./
+COPY docker-entrypoint.sh ./
 
 # Create non-root user for security
 RUN useradd -m -u 1000 appuser && \
+    chmod +x /app/docker-entrypoint.sh && \
     chown -R appuser:appuser /app
 USER appuser
 
 # Expose port
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()" || exit 1
+# Health check - generous timeouts for serverless DB cold starts
+HEALTHCHECK --interval=30s --timeout=15s --start-period=60s --retries=5 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=10).read()" || exit 1
 
-# Production command with optimized settings
+# Run migrations and start server
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2", "--loop", "uvloop", "--http", "httptools"]

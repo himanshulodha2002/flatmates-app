@@ -14,11 +14,11 @@ data class AuthResponse(
     @SerialName("access_token")
     val accessToken: String,
     @SerialName("refresh_token")
-    val refreshToken: String,
+    val refreshToken: String? = null,
     @SerialName("token_type")
     val tokenType: String = "Bearer",
     @SerialName("expires_in")
-    val expiresIn: Long,
+    val expiresIn: Long = 3600, // Default 1 hour if not provided
     val user: UserDto
 )
 

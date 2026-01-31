@@ -33,8 +33,7 @@ data class HomeUiState(
     val totalOwing: BigDecimal = BigDecimal.ZERO,
     val isLoading: Boolean = true,
     val error: String? = null,
-    val pendingSyncCount: Int = 0,
-    val currentUserId: String = ""
+    val pendingSyncCount: Int = 0
 )
 
 /**
@@ -62,8 +61,21 @@ class HomeViewModel @Inject constructor(
             
             try {
                 householdRepository.getActiveHousehold()
-                    .filterNotNull()
-                    .collectLatest { household ->
+                    .collect { household ->
+                        if (household == null) {
+                            // No household yet - show empty state
+                            _uiState.update { 
+                                it.copy(
+                                    isLoading = false,
+                                    householdName = "No Household",
+                                    overdueTodos = emptyList(),
+                                    todaysTodos = emptyList(),
+                                    shoppingItemsCount = 0
+                                ) 
+                            }
+                            return@collect
+                        }
+                        
                         _uiState.update { it.copy(householdName = household.name) }
                         
                         // Load todos

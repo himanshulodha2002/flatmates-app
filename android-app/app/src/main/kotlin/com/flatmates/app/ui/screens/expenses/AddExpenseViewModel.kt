@@ -2,6 +2,7 @@ package com.flatmates.app.ui.screens.expenses
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.flatmates.app.auth.AuthManager
 import com.flatmates.app.domain.model.Expense
 import com.flatmates.app.domain.model.ExpenseSplit
 import com.flatmates.app.domain.model.HouseholdMember
@@ -45,7 +46,8 @@ data class AddExpenseUiState(
 @HiltViewModel
 class AddExpenseViewModel @Inject constructor(
     private val householdRepository: HouseholdRepository,
-    private val expenseRepository: ExpenseRepository
+    private val expenseRepository: ExpenseRepository,
+    private val authManager: AuthManager
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(AddExpenseUiState())
@@ -55,7 +57,16 @@ class AddExpenseViewModel @Inject constructor(
     private var currentUserId: String = ""
     
     init {
+        loadCurrentUser()
         loadHouseholdMembers()
+    }
+    
+    private fun loadCurrentUser() {
+        viewModelScope.launch {
+            authManager.userId.collect { userId ->
+                currentUserId = userId ?: ""
+            }
+        }
     }
     
     private fun loadHouseholdMembers() {

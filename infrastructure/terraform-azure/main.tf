@@ -231,25 +231,25 @@ resource "azurerm_container_app" "backend" {
         value = var.environment == "production" ? "INFO" : "DEBUG"
       }
 
-      # Liveness probe
+      # Liveness probe - generous settings for serverless cold starts
+      # Container startup + Neon DB cold start can take 10-15 seconds
       liveness_probe {
-        transport = "HTTP"
-        path      = "/health"
-        port      = 8000
-        initial_delay    = 30
-        interval_seconds = 30
-        timeout          = 5
-        failure_count_threshold = 3
+        transport               = "HTTP"
+        path                    = "/health"
+        port                    = 8000
+        interval_seconds        = 30
+        timeout                 = 15
+        failure_count_threshold = 5
       }
 
-      # Readiness probe
+      # Readiness probe - more generous timeout for DB cold starts
       readiness_probe {
-        transport = "HTTP"
-        path      = "/health"
-        port      = 8000
-        interval_seconds = 10
-        timeout          = 5
-        failure_count_threshold = 3
+        transport               = "HTTP"
+        path                    = "/health"
+        port                    = 8000
+        interval_seconds        = 10
+        timeout                 = 15
+        failure_count_threshold = 5
       }
     }
 

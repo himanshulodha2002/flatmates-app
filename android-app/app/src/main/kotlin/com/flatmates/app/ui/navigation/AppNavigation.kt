@@ -10,6 +10,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.flatmates.app.ui.screens.auth.LoginScreen
 import com.flatmates.app.ui.screens.expenses.AddExpenseScreen
 import com.flatmates.app.ui.screens.expenses.ExpensesScreen
 import com.flatmates.app.ui.screens.home.HomeScreen
@@ -25,14 +26,17 @@ import com.flatmates.app.ui.screens.todos.TodosScreen
  */
 @Composable
 fun AppNavigation(
-    isLoggedIn: Boolean = true,
+    isLoggedIn: Boolean = false,
+    onLoginSuccess: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val navController = rememberNavController()
     
     if (!isLoggedIn) {
-        // Auth flow would be handled here
-        // For now, we just show the main content
+        // Show login screen
+        LoginScreen(
+            onLoginSuccess = onLoginSuccess
+        )
         return
     }
     
