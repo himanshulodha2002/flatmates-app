@@ -24,7 +24,7 @@ android {
         }
 
         // Build config for API URL and Google Web Client ID
-        buildConfigField("String", "API_BASE_URL", "\"${System.getenv("API_BASE_URL") ?: "https://your-api.azurecontainerapps.io/"}\"")
+        buildConfigField("String", "API_BASE_URL", "\"${System.getenv("API_BASE_URL") ?: "https://ca-flatmates-api-dev.wittytree-0de572ba.southeastasia.azurecontainerapps.io/"}\"")
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${System.getenv("GOOGLE_WEB_CLIENT_ID") ?: ""}\"")
     }
 
