@@ -2,14 +2,20 @@
 Main FastAPI application for Flatmates App.
 """
 
+import asyncio
 import time
+import traceback
 import uuid
 from contextlib import asynccontextmanager
+from functools import wraps
 
-from fastapi import FastAPI, Depends, Request, Response
+from fastapi import FastAPI, Depends, Request, Response, HTTPException, status
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.config import settings
 from app.core.database import get_db
@@ -158,6 +164,121 @@ app.add_middleware(
 
 
 # =============================================================================
+# Exception Handlers
+# =============================================================================
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Handle all unhandled exceptions with proper JSON response."""
+    request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
+    
+    # Log the error
+    logger.error(
+        "Unhandled exception",
+        request_id=request_id,
+        path=request.url.path,
+        method=request.method,
+        error=str(exc),
+        traceback=traceback.format_exc()
+    )
+    
+    # Capture in Sentry
+    capture_exception(exc, context={
+        "request_id": request_id,
+        "path": request.url.path
+    })
+    
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={
+            "error": "internal_server_error",
+            "message": "An unexpected error occurred",
+            "request_id": request_id
+        }
+    )
+
+
+@app.exception_handler(SQLAlchemyError)
+async def database_exception_handler(request: Request, exc: SQLAlchemyError):
+    """Handle database errors specifically with retry guidance."""
+    request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
+    
+    logger.error(
+        "Database error",
+        request_id=request_id,
+        path=request.url.path,
+        error=str(exc)
+    )
+    
+    # Capture in Sentry
+    capture_exception(exc, context={
+        "request_id": request_id,
+        "path": request.url.path,
+        "error_type": "database_error"
+    })
+    
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content={
+            "error": "database_error",
+            "message": "Database temporarily unavailable. Please retry.",
+            "request_id": request_id,
+            "retry_after": 5
+        },
+        headers={"Retry-After": "5"}
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Handle validation errors with clear messages."""
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={
+            "error": "validation_error",
+            "message": "Invalid request data",
+            "details": exc.errors()
+        }
+    )
+
+
+# =============================================================================
+# Utility Functions
+# =============================================================================
+
+def with_timeout(seconds: int = 30):
+    """
+    Decorator to add timeout to async functions.
+    
+    Usage:
+        @with_timeout(10)
+        async def slow_operation():
+            ...
+    
+    Args:
+        seconds: Maximum time to wait before timing out
+        
+    Returns:
+        Decorated function with timeout handling
+    """
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            try:
+                return await asyncio.wait_for(
+                    func(*args, **kwargs),
+                    timeout=seconds
+                )
+            except asyncio.TimeoutError:
+                raise HTTPException(
+                    status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+                    detail="Request timed out"
+                )
+        return wrapper
+    return decorator
+
+
+# =============================================================================
 # Core Endpoints
 # =============================================================================
 
@@ -176,14 +297,59 @@ async def health_check(db: Session = Depends(get_db)):
     }
     
     try:
-        # Test database connection
+        # Test database connection and measure latency
+        start = time.perf_counter()
         db.execute(text("SELECT 1"))
+        latency = (time.perf_counter() - start) * 1000
         health["database"] = "connected"
+        health["latency_ms"] = round(latency, 2)
     except Exception:
         health["database"] = "disconnected"
         health["status"] = "degraded"
 
     return health
+
+
+@app.get("/health/deep")
+async def deep_health_check(db: Session = Depends(get_db)):
+    """
+    Deep health check including database connectivity with detailed diagnostics.
+    
+    Returns:
+        JSON response with detailed health information including:
+        - Overall status
+        - Individual component checks
+        - Database latency metrics
+    """
+    checks = {
+        "api": "healthy",
+        "database": "unknown",
+        "database_latency_ms": None
+    }
+    
+    try:
+        start = time.perf_counter()
+        db.execute(text("SELECT 1"))
+        latency = (time.perf_counter() - start) * 1000
+        
+        checks["database"] = "healthy"
+        checks["database_latency_ms"] = round(latency, 2)
+    except Exception as e:
+        checks["database"] = "unhealthy"
+        checks["database_error"] = str(e)
+    
+    # Determine overall status
+    overall_status = "healthy" if all(
+        v == "healthy" for k, v in checks.items() 
+        if k == "database" or k == "api"
+    ) else "unhealthy"
+    
+    return {
+        "status": overall_status,
+        "version": settings.VERSION,
+        "environment": settings.ENVIRONMENT,
+        "checks": checks
+    }
 
 
 @app.get("/")

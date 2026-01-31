@@ -1,0 +1,8 @@
+# Local configuration file (not committed to version control)
+# Copy this file to local.properties and update with your settings
+
+# SDK location (usually auto-detected by Android Studio)
+# sdk.dir=/path/to/your/Android/Sdk
+
+# Optional: NDK location if needed
+# ndk.dir=/path/to/your/Android/Sdk/ndk/version
