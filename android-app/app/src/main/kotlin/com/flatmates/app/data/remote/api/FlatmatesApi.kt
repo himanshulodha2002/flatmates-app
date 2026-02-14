@@ -47,6 +47,12 @@ interface FlatmatesApi : AuthApi, SyncApi {
         @Body request: InviteCreateRequest
     ): Response<InviteDto>
     
+    @POST("api/v1/households/{id}/invite/public")
+    suspend fun createPublicInvite(
+        @Path("id") householdId: String,
+        @Body request: CreatePublicInviteRequest
+    ): Response<InviteDto>
+    
     @DELETE("api/v1/households/{id}/members/{memberId}")
     suspend fun removeMember(
         @Path("id") householdId: String,

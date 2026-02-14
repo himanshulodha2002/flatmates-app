@@ -192,11 +192,16 @@ data class InviteCreateRequest(
 )
 
 @Serializable
+data class CreatePublicInviteRequest(
+    // No fields needed - just triggers public invite creation on backend
+)
+
+@Serializable
 data class InviteDto(
     val id: String,
     @SerialName("household_id")
     val householdId: String,
-    val email: String,
+    val email: String? = null,
     val token: String,
     val status: String,
     @SerialName("expires_at")
