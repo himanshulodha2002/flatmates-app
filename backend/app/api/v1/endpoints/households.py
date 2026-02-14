@@ -23,6 +23,7 @@ from app.schemas.household import (
     HouseholdResponse,
     HouseholdWithMembers,
     InviteCreate,
+    CreatePublicInviteRequest,
     InviteResponse,
     JoinHouseholdRequest,
     MemberRoleUpdate,
@@ -327,6 +328,46 @@ def create_invite(
     )
 
 
+@router.post("/{household_id}/invite/public", response_model=InviteResponse)
+def create_public_invite(
+    household_id: uuid.UUID,
+    _invite_data: CreatePublicInviteRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    _: HouseholdMember = Depends(check_owner_permission),
+):
+    """
+    Create a public invite code for the household.
+    Anyone with this code can join - no email required.
+    Only owners can create invites.
+    """
+    # Generate unique token
+    token = secrets.token_urlsafe(32)
+
+    # Create invite (without email)
+    invite = HouseholdInvite(
+        household_id=household_id,
+        email=None,  # Public invite has no specific email
+        token=token,
+        status=InviteStatus.PENDING,
+        expires_at=utc_now() + timedelta(days=7),
+        created_by=current_user.id,
+    )
+    db.add(invite)
+    db.commit()
+    db.refresh(invite)
+
+    return InviteResponse(
+        id=invite.id,
+        household_id=invite.household_id,
+        email=invite.email,
+        token=invite.token,
+        status=invite.status,
+        expires_at=invite.expires_at,
+        created_at=invite.created_at,
+    )
+
+
 @router.delete("/{household_id}/invites/{invite_id}", status_code=status.HTTP_204_NO_CONTENT)
 def cancel_invite(
     household_id: uuid.UUID,
@@ -404,8 +445,8 @@ def join_household(
         db.commit()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invite has expired")
 
-    # Check if email matches (optional - you may want to remove this check)
-    if invite.email != current_user.email:
+    # Check if email matches (only for email-specific invites)
+    if invite.email is not None and invite.email != current_user.email:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="This invite is for a different email address",
