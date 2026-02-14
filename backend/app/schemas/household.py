@@ -69,9 +69,15 @@ class MemberRoleUpdate(BaseModel):
 
 # Invite schemas
 class InviteCreate(BaseModel):
-    """Schema for creating an invite."""
+    """Schema for creating an invite (email-based)."""
 
     email: str
+
+
+class CreatePublicInviteRequest(BaseModel):
+    """Schema for creating a public invite (no specific email required)."""
+
+    pass
 
 
 class InviteResponse(BaseModel):
@@ -81,7 +87,7 @@ class InviteResponse(BaseModel):
 
     id: UUID
     household_id: UUID
-    email: str
+    email: Optional[str] = None
     token: str
     status: InviteStatus
     expires_at: datetime
