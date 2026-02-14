@@ -21,10 +21,8 @@ import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.CloudQueue
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Divider
@@ -49,7 +47,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.flatmates.app.ui.components.FlatmatesCard
 import com.flatmates.app.ui.components.LoadingState
+import com.flatmates.app.ui.screens.profile.components.AboutSheet
+import com.flatmates.app.ui.screens.profile.components.CreateHouseholdSheet
 import com.flatmates.app.ui.screens.profile.components.HouseholdSwitcherSheet
+import com.flatmates.app.ui.screens.profile.components.InviteMemberSheet
+import com.flatmates.app.ui.screens.profile.components.JoinHouseholdSheet
 import com.flatmates.app.ui.theme.Dimensions
 
 /**
@@ -131,48 +133,51 @@ fun ProfileScreen(
             }
         }
         
-        // Sync status
+        // Invite members card
         item {
-            SyncStatusCard(
-                pendingSyncCount = uiState.pendingSyncCount
-            )
-        }
-        
-        // Settings section
-        item {
-            Spacer(modifier = Modifier.height(Dimensions.spacingSm))
-            Text(
-                text = "Settings",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-        
-        item {
-            FlatmatesCard {
-                Column {
-                    SettingsItem(
-                        icon = Icons.Default.Notifications,
-                        title = "Notifications",
-                        subtitle = "Manage notification preferences",
-                        onClick = { /* TODO */ }
+            FlatmatesCard(
+                onClick = { viewModel.showInviteMember() }
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(Dimensions.cardPadding),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PersonAdd,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.secondary
                     )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    SettingsItem(
-                        icon = Icons.Default.Palette,
-                        title = "Appearance",
-                        subtitle = "Theme and display settings",
-                        onClick = { /* TODO */ }
-                    )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    SettingsItem(
-                        icon = Icons.Default.Settings,
-                        title = "App Settings",
-                        subtitle = "General app configuration",
-                        onClick = { /* TODO */ }
+                    Spacer(modifier = Modifier.width(Dimensions.spacingMd))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Invite Flatmates",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = "Add members to your household",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = "Invite members",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
+        }
+        
+        // Sync status
+        item {
+            SyncStatusCard(
+                pendingSyncCount = uiState.pendingSyncCount,
+                isSyncing = uiState.isSyncing,
+                onSyncClick = { viewModel.syncNow() }
+            )
         }
         
         // About section
@@ -192,7 +197,7 @@ fun ProfileScreen(
                         icon = Icons.Default.Info,
                         title = "About Flatmates",
                         subtitle = "Version 1.0.0",
-                        onClick = { /* TODO */ }
+                        onClick = { viewModel.showAbout() }
                     )
                 }
             }
@@ -211,7 +216,7 @@ fun ProfileScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Logout,
+                        imageVector = Icons.AutoMirrored.Filled.Logout,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.error
                     )
@@ -233,7 +238,49 @@ fun ProfileScreen(
             households = uiState.households,
             currentHouseholdId = uiState.currentHousehold?.id,
             onSelect = { viewModel.switchHousehold(it) },
+            onCreateNew = { viewModel.showCreateHousehold() },
+            onJoinHousehold = { viewModel.showJoinHousehold() },
             onDismiss = { viewModel.hideHouseholdSwitcher() }
+        )
+    }
+    
+    // Create household sheet
+    if (uiState.showCreateHousehold) {
+        CreateHouseholdSheet(
+            isLoading = uiState.isCreatingHousehold,
+            error = uiState.createHouseholdError,
+            onCreate = { name -> viewModel.createHousehold(name) },
+            onDismiss = { viewModel.hideCreateHousehold() }
+        )
+    }
+    
+    // Join household sheet
+    if (uiState.showJoinHousehold) {
+        JoinHouseholdSheet(
+            isLoading = uiState.isJoiningHousehold,
+            error = uiState.joinHouseholdError,
+            onJoin = { code -> viewModel.joinHousehold(code) },
+            onDismiss = { viewModel.hideJoinHousehold() }
+        )
+    }
+    
+    // Invite member sheet
+    if (uiState.showInviteMember) {
+        InviteMemberSheet(
+            householdName = uiState.currentHousehold?.name ?: "Household",
+            inviteToken = uiState.inviteToken,
+            isLoading = uiState.isCreatingInvite,
+            error = uiState.inviteError,
+            onCreateInvite = { email -> viewModel.createInvite(email) },
+            onCreatePublicInvite = { viewModel.createPublicInvite() },
+            onDismiss = { viewModel.hideInviteMember() }
+        )
+    }
+    
+    // About sheet
+    if (uiState.showAbout) {
+        AboutSheet(
+            onDismiss = { viewModel.hideAbout() }
         )
     }
     
@@ -310,8 +357,14 @@ private fun UserInfoCard(
 }
 
 @Composable
-private fun SyncStatusCard(pendingSyncCount: Int) {
-    FlatmatesCard {
+private fun SyncStatusCard(
+    pendingSyncCount: Int,
+    isSyncing: Boolean = false,
+    onSyncClick: () -> Unit = {}
+) {
+    FlatmatesCard(
+        onClick = onSyncClick
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -319,7 +372,9 @@ private fun SyncStatusCard(pendingSyncCount: Int) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = if (pendingSyncCount > 0) {
+                imageVector = if (isSyncing) {
+                    Icons.Default.Sync
+                } else if (pendingSyncCount > 0) {
                     Icons.Default.CloudOff
                 } else {
                     Icons.Default.CloudQueue
@@ -339,15 +394,15 @@ private fun SyncStatusCard(pendingSyncCount: Int) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = if (pendingSyncCount > 0) {
-                        "$pendingSyncCount changes pending"
-                    } else {
-                        "All changes synced"
+                    text = when {
+                        isSyncing -> "Syncing..."
+                        pendingSyncCount > 0 -> "$pendingSyncCount changes pending"
+                        else -> "All changes synced"
                     },
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
-            if (pendingSyncCount > 0) {
+            if (pendingSyncCount > 0 || isSyncing) {
                 Icon(
                     imageVector = Icons.Default.Sync,
                     contentDescription = "Sync now",
