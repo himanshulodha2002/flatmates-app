@@ -3,6 +3,8 @@ package com.flatmates.app.ui.screens.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.flatmates.app.domain.model.Todo
+import com.flatmates.app.domain.model.enums.TodoPriority
+import com.flatmates.app.domain.model.enums.TodoStatus
 import com.flatmates.app.domain.repository.ExpenseRepository
 import com.flatmates.app.domain.repository.HouseholdRepository
 import com.flatmates.app.domain.repository.ShoppingRepository
@@ -13,12 +15,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import java.math.BigDecimal
+import java.util.UUID
 import javax.inject.Inject
 
 /**
@@ -33,7 +38,8 @@ data class HomeUiState(
     val totalOwing: BigDecimal = BigDecimal.ZERO,
     val isLoading: Boolean = true,
     val error: String? = null,
-    val pendingSyncCount: Int = 0
+    val pendingSyncCount: Int = 0,
+    val showAddTodoSheet: Boolean = false
 )
 
 /**
@@ -133,5 +139,53 @@ class HomeViewModel @Inject constructor(
      */
     fun refresh() {
         loadHomeData()
+    }
+    
+    /**
+     * Show the add todo bottom sheet.
+     */
+    fun showAddTodoSheet() {
+        _uiState.update { it.copy(showAddTodoSheet = true) }
+    }
+    
+    /**
+     * Hide the add todo bottom sheet.
+     */
+    fun hideAddTodoSheet() {
+        _uiState.update { it.copy(showAddTodoSheet = false) }
+    }
+    
+    /**
+     * Create a new todo from the home screen.
+     */
+    fun createTodo(
+        title: String,
+        description: String?,
+        priority: TodoPriority,
+        dueDate: LocalDate?
+    ) {
+        viewModelScope.launch {
+            val household = householdRepository.getActiveHousehold()
+                .filterNotNull()
+                .first()
+            
+            val now = Clock.System.now()
+            val todo = Todo(
+                id = UUID.randomUUID().toString(),
+                householdId = household.id,
+                title = title,
+                description = description,
+                status = TodoStatus.PENDING,
+                priority = priority,
+                dueDate = dueDate,
+                assignedToId = null,
+                createdBy = "",
+                createdAt = now,
+                updatedAt = now
+            )
+            
+            todoRepository.createTodo(todo)
+            _uiState.update { it.copy(showAddTodoSheet = false) }
+        }
     }
 }

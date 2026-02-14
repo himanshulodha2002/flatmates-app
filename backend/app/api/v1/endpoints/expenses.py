@@ -158,7 +158,19 @@ def create_expense(
             # Create custom split records
             for split_data in expense_data.splits:
                 # Verify user is a household member
-                verify_household_membership(expense_data.household_id, User(id=split_data.user_id), db)
+                split_user_member = (
+                    db.query(HouseholdMember)
+                    .filter(
+                        HouseholdMember.household_id == expense_data.household_id,
+                        HouseholdMember.user_id == split_data.user_id,
+                    )
+                    .first()
+                )
+                if not split_user_member:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"User {split_data.user_id} is not a member of this household",
+                    )
 
                 split = ExpenseSplit(
                     expense_id=expense.id,

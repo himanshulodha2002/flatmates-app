@@ -54,10 +54,12 @@ fun MainScreen(
         return
     }
     
-    // Start with login screen, only show main content when logged in
+    // Navigate based on auth and household state
     AppNavigation(
         isLoggedIn = uiState.isLoggedIn,
-        onLoginSuccess = { viewModel.onLoginSuccess() }
+        hasHousehold = uiState.hasHousehold,
+        onLoginSuccess = { viewModel.onLoginSuccess() },
+        onHouseholdSetupComplete = { viewModel.onHouseholdSetupComplete() }
     )
 }
 
@@ -65,6 +67,9 @@ fun MainScreen(
 @Composable
 fun MainScreenPreview() {
     FlatmatesTheme {
-        AppNavigation(isLoggedIn = false)
+        AppNavigation(
+            isLoggedIn = false,
+            hasHousehold = false
+        )
     }
 }

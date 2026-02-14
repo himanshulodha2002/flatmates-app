@@ -10,22 +10,29 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Button
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.flatmates.app.domain.model.enums.TodoPriority
@@ -34,8 +41,10 @@ import com.flatmates.app.ui.theme.PriorityHigh
 import com.flatmates.app.ui.theme.PriorityLow
 import com.flatmates.app.ui.theme.PriorityMedium
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toLocalDateTime
 
 /**
@@ -51,6 +60,7 @@ fun AddTodoSheet(
     var description by remember { mutableStateOf("") }
     var priority by remember { mutableStateOf(TodoPriority.MEDIUM) }
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
+    var showDatePicker by remember { mutableStateOf(false) }
     
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     
@@ -125,18 +135,27 @@ fun AddTodoSheet(
             Spacer(modifier = Modifier.height(Dimensions.spacingMd))
             
             // Due date
-            OutlinedButton(
-                onClick = { 
-                    // TODO: Show date picker
-                    // For now, set to today's date as placeholder
-                    selectedDate = Clock.System.now()
-                        .toLocalDateTime(TimeZone.currentSystemDefault()).date
-                },
-                modifier = Modifier.fillMaxWidth()
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.CalendarToday, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text(selectedDate?.toString() ?: "Set due date")
+                OutlinedButton(
+                    onClick = { showDatePicker = true },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Default.CalendarToday, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(selectedDate?.toString() ?: "Set due date")
+                }
+                if (selectedDate != null) {
+                    IconButton(onClick = { selectedDate = null }) {
+                        Icon(
+                            Icons.Default.Clear,
+                            contentDescription = "Clear date",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
             
             Spacer(modifier = Modifier.height(Dimensions.spacingXl))
@@ -160,6 +179,42 @@ fun AddTodoSheet(
             }
             
             Spacer(modifier = Modifier.height(Dimensions.spacingLg))
+        }
+    }
+    
+    // Date picker dialog
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = selectedDate?.let { date ->
+                // Convert LocalDate to epoch millis
+                val instant = date.atStartOfDayIn(TimeZone.currentSystemDefault())
+                instant.toEpochMilliseconds()
+            } ?: Clock.System.now().toEpochMilliseconds()
+        )
+        
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let { millis ->
+                            selectedDate = Instant.fromEpochMilliseconds(millis)
+                                .toLocalDateTime(TimeZone.currentSystemDefault())
+                                .date
+                        }
+                        showDatePicker = false
+                    }
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
         }
     }
 }

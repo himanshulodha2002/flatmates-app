@@ -44,6 +44,7 @@ import com.flatmates.app.ui.components.LoadingState
 import com.flatmates.app.ui.components.TaskDisplayData
 import com.flatmates.app.ui.components.TaskItem
 import com.flatmates.app.ui.navigation.Routes
+import com.flatmates.app.ui.screens.todos.components.AddTodoSheet
 import com.flatmates.app.ui.theme.Dimensions
 
 /**
@@ -80,7 +81,7 @@ fun HomeScreen(
         // Quick Actions
         item {
             QuickActionsRow(
-                onTodoClick = { navController.navigate(Routes.Todos.route) },
+                onTodoClick = { viewModel.showAddTodoSheet() },
                 onShoppingClick = { navController.navigate(Routes.Shopping.route) },
                 onExpenseClick = { navController.navigate(Routes.AddExpense.route) }
             )
@@ -153,6 +154,16 @@ fun HomeScreen(
                 )
             }
         }
+    }
+    
+    // Add todo bottom sheet
+    if (uiState.showAddTodoSheet) {
+        AddTodoSheet(
+            onDismiss = { viewModel.hideAddTodoSheet() },
+            onSave = { title, desc, priority, dueDate ->
+                viewModel.createTodo(title, desc, priority, dueDate)
+            }
+        )
     }
 }
 

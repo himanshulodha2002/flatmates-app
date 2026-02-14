@@ -26,9 +26,11 @@ android {
     signingConfigs {
         create("release") {
             storeFile = file("${rootProject.projectDir}/flatmates.keystore")
-            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "qwerty"
-            keyAlias = "flatmates"
-            keyPassword = System.getenv("KEY_PASSWORD") ?: "qwerty"
+            // SECURITY: Passwords must be set via environment variables for release builds
+            // For local development, you can set these in your shell or skip release builds
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
+            keyAlias = System.getenv("KEY_ALIAS") ?: "flatmates"
+            keyPassword = System.getenv("KEY_PASSWORD") ?: ""
         }
     }
 
@@ -65,6 +67,22 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            
+            // Validate signing config at build time
+            tasks.configureEach {
+                if (name.contains("Release") && name.contains("sign", ignoreCase = true)) {
+                    doFirst {
+                        val keystorePassword = System.getenv("KEYSTORE_PASSWORD")
+                        val keyPassword = System.getenv("KEY_PASSWORD")
+                        if (keystorePassword.isNullOrBlank() || keyPassword.isNullOrBlank()) {
+                            throw GradleException(
+                                "Release signing requires KEYSTORE_PASSWORD and KEY_PASSWORD environment variables. " +
+                                "Set them via: export KEYSTORE_PASSWORD=your-password"
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 

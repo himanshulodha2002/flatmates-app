@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -34,6 +36,8 @@ fun HouseholdSwitcherSheet(
     households: List<Household>,
     currentHouseholdId: String?,
     onSelect: (String) -> Unit,
+    onCreateNew: () -> Unit,
+    onJoinHousehold: () -> Unit,
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -56,6 +60,7 @@ fun HouseholdSwitcherSheet(
             
             Spacer(modifier = Modifier.height(Dimensions.spacingMd))
             
+            // Existing households
             households.forEach { household ->
                 val isSelected = household.id == currentHouseholdId
                 
@@ -105,12 +110,65 @@ fun HouseholdSwitcherSheet(
                     }
                 }
                 
-                if (household != households.last()) {
-                    HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = Dimensions.spacingLg),
-                        color = MaterialTheme.colorScheme.outlineVariant
-                    )
-                }
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = Dimensions.spacingLg),
+                    color = MaterialTheme.colorScheme.outlineVariant
+                )
+            }
+            
+            // Create new household option
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onCreateNew() }
+                    .padding(
+                        horizontal = Dimensions.spacingLg,
+                        vertical = Dimensions.spacingMd
+                    ),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(Dimensions.spacingMd))
+                Text(
+                    text = "Create New Household",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = Dimensions.spacingLg),
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
+            
+            // Join household option
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onJoinHousehold() }
+                    .padding(
+                        horizontal = Dimensions.spacingLg,
+                        vertical = Dimensions.spacingMd
+                    ),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Link,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.secondary
+                )
+                Spacer(modifier = Modifier.width(Dimensions.spacingMd))
+                Text(
+                    text = "Join Household with Code",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.secondary
+                )
             }
             
             Spacer(modifier = Modifier.height(Dimensions.spacingXl))

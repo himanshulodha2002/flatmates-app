@@ -8,6 +8,7 @@ sealed class Routes(val route: String) {
     // Auth
     data object Login : Routes("login")
     data object Onboarding : Routes("onboarding")
+    data object HouseholdSetup : Routes("household_setup")
     
     // Main tabs
     data object Home : Routes("home")

@@ -151,13 +151,21 @@ def process_todo_changes(changes, household_id, current_user, db) -> List[SyncCo
     # Handle created todos
     for todo_data in changes.created:
         try:
+            # Convert uppercase enum values from Android to lowercase for backend
+            status = todo_data.get("status", "pending")
+            if isinstance(status, str):
+                status = status.lower()
+            priority = todo_data.get("priority", "medium")
+            if isinstance(priority, str):
+                priority = priority.lower()
+            
             todo = Todo(
                 id=UUID(todo_data.get("id")),
                 household_id=household_id,
                 title=todo_data.get("title"),
                 description=todo_data.get("description"),
-                status=todo_data.get("status", "PENDING"),
-                priority=todo_data.get("priority", "MEDIUM"),
+                status=status,
+                priority=priority,
                 due_date=todo_data.get("due_date"),
                 assigned_to_id=UUID(todo_data.get("assigned_to_id")) if todo_data.get("assigned_to_id") else None,
                 created_by=current_user.id,
@@ -175,8 +183,13 @@ def process_todo_changes(changes, household_id, current_user, db) -> List[SyncCo
                 # Simple last-write-wins for now
                 todo.title = todo_data.get("title", todo.title)
                 todo.description = todo_data.get("description", todo.description)
-                todo.status = todo_data.get("status", todo.status)
-                todo.priority = todo_data.get("priority", todo.priority)
+                # Convert uppercase enum values from Android to lowercase for backend
+                if todo_data.get("status"):
+                    status = todo_data.get("status")
+                    todo.status = status.lower() if isinstance(status, str) else status
+                if todo_data.get("priority"):
+                    priority = todo_data.get("priority")
+                    todo.priority = priority.lower() if isinstance(priority, str) else priority
                 if todo_data.get("due_date"):
                     todo.due_date = todo_data.get("due_date")
                 if todo_data.get("assigned_to_id"):
@@ -200,12 +213,17 @@ def process_shopping_list_changes(changes, household_id, current_user, db) -> Li
     
     for list_data in changes.created:
         try:
+            # Convert uppercase enum values from Android to lowercase for backend
+            status = list_data.get("status", "active")
+            if isinstance(status, str):
+                status = status.lower()
+            
             shopping_list = ShoppingList(
                 id=UUID(list_data.get("id")),
                 household_id=household_id,
                 name=list_data.get("name"),
                 description=list_data.get("description"),
-                status=list_data.get("status", "ACTIVE"),
+                status=status,
                 created_by=current_user.id,
             )
             db.merge(shopping_list)
@@ -219,7 +237,9 @@ def process_shopping_list_changes(changes, household_id, current_user, db) -> Li
             if shopping_list:
                 shopping_list.name = list_data.get("name", shopping_list.name)
                 shopping_list.description = list_data.get("description", shopping_list.description)
-                shopping_list.status = list_data.get("status", shopping_list.status)
+                if list_data.get("status"):
+                    status = list_data.get("status")
+                    shopping_list.status = status.lower() if isinstance(status, str) else status
         except Exception:
             pass
     
@@ -280,14 +300,22 @@ def process_expense_changes(changes, household_id, current_user, db) -> List[Syn
     
     for expense_data in changes.created:
         try:
+            # Convert uppercase enum values from Android to lowercase for backend
+            category = expense_data.get("category", "other")
+            if isinstance(category, str):
+                category = category.lower()
+            split_type = expense_data.get("split_type", "equal")
+            if isinstance(split_type, str):
+                split_type = split_type.lower()
+            
             expense = Expense(
                 id=UUID(expense_data.get("id")),
                 household_id=household_id,
                 created_by=current_user.id,
                 amount=expense_data.get("amount"),
                 description=expense_data.get("description"),
-                category=expense_data.get("category", "OTHER"),
-                split_type=expense_data.get("split_type", "EQUAL"),
+                category=category,
+                split_type=split_type,
                 date=expense_data.get("date"),
             )
             db.merge(expense)
@@ -301,7 +329,9 @@ def process_expense_changes(changes, household_id, current_user, db) -> List[Syn
             if expense:
                 expense.amount = expense_data.get("amount", expense.amount)
                 expense.description = expense_data.get("description", expense.description)
-                expense.category = expense_data.get("category", expense.category)
+                if expense_data.get("category"):
+                    category = expense_data.get("category")
+                    expense.category = category.lower() if isinstance(category, str) else category
         except Exception:
             pass
     

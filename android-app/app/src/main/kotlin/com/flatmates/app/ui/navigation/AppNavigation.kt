@@ -14,6 +14,7 @@ import com.flatmates.app.ui.screens.auth.LoginScreen
 import com.flatmates.app.ui.screens.expenses.AddExpenseScreen
 import com.flatmates.app.ui.screens.expenses.ExpensesScreen
 import com.flatmates.app.ui.screens.home.HomeScreen
+import com.flatmates.app.ui.screens.onboarding.HouseholdSetupScreen
 import com.flatmates.app.ui.screens.profile.ProfileScreen
 import com.flatmates.app.ui.screens.shopping.ShoppingListDetailScreen
 import com.flatmates.app.ui.screens.shopping.ShoppingScreen
@@ -27,19 +28,30 @@ import com.flatmates.app.ui.screens.todos.TodosScreen
 @Composable
 fun AppNavigation(
     isLoggedIn: Boolean = false,
+    hasHousehold: Boolean = false,
     onLoginSuccess: () -> Unit = {},
+    onHouseholdSetupComplete: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val navController = rememberNavController()
     
+    // Show login screen if not logged in
     if (!isLoggedIn) {
-        // Show login screen
         LoginScreen(
             onLoginSuccess = onLoginSuccess
         )
         return
     }
     
+    // Show household setup if logged in but no household
+    if (!hasHousehold) {
+        HouseholdSetupScreen(
+            onSetupComplete = onHouseholdSetupComplete
+        )
+        return
+    }
+    
+    // Show main app content
     Scaffold(
         bottomBar = { NavBottomBar(navController = navController) },
         modifier = modifier

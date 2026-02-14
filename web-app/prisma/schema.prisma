@@ -1,0 +1,274 @@
+// Prisma schema that matches the existing backend PostgreSQL database
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String   @id @default(uuid()) @db.Uuid
+  email              String   @unique
+  full_name          String
+  google_id          String   @unique
+  profile_picture_url String?
+  is_active          Boolean  @default(true)
+  created_at         DateTime @default(now()) @db.Timestamptz
+  updated_at         DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  // Relations
+  household_members     HouseholdMember[]
+  created_households    Household[]         @relation("HouseholdCreator")
+  created_invites       HouseholdInvite[]   @relation("InviteCreator")
+  created_todos         Todo[]              @relation("TodoCreator")
+  assigned_todos        Todo[]              @relation("TodoAssignee")
+  created_expenses      Expense[]           @relation("ExpenseCreator")
+  paid_expenses         Expense[]           @relation("ExpensePayer")
+  expense_splits        ExpenseSplit[]
+  created_shopping_lists ShoppingList[]     @relation("ShoppingListCreator")
+  created_shopping_items ShoppingListItem[] @relation("ItemCreator")
+  assigned_shopping_items ShoppingListItem[] @relation("ItemAssignee")
+  checked_off_items     ShoppingListItem[] @relation("ItemCheckedOff")
+
+  @@map("users")
+}
+
+model Household {
+  id         String   @id @default(uuid()) @db.Uuid
+  name       String
+  created_by String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  // Relations
+  creator  User              @relation("HouseholdCreator", fields: [created_by], references: [id])
+  members  HouseholdMember[]
+  invites  HouseholdInvite[]
+  expenses Expense[]
+  todos    Todo[]
+  shopping_lists ShoppingList[]
+  item_categories ItemCategory[]
+
+  @@map("households")
+}
+
+enum MemberRole {
+  owner
+  member
+}
+
+model HouseholdMember {
+  id           String     @id @default(uuid()) @db.Uuid
+  user_id      String     @db.Uuid
+  household_id String     @db.Uuid
+  role         MemberRole @default(member)
+  joined_at    DateTime   @default(now()) @db.Timestamptz
+
+  // Relations
+  user      User      @relation(fields: [user_id], references: [id])
+  household Household @relation(fields: [household_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, household_id], name: "uix_user_household")
+  @@map("household_members")
+}
+
+enum InviteStatus {
+  pending
+  accepted
+  expired
+}
+
+model HouseholdInvite {
+  id           String       @id @default(uuid()) @db.Uuid
+  household_id String       @db.Uuid
+  email        String
+  token        String       @unique
+  status       InviteStatus @default(pending)
+  expires_at   DateTime     @db.Timestamptz
+  created_by   String       @db.Uuid
+  created_at   DateTime     @default(now()) @db.Timestamptz
+
+  // Relations
+  household Household @relation(fields: [household_id], references: [id], onDelete: Cascade)
+  creator   User      @relation("InviteCreator", fields: [created_by], references: [id])
+
+  @@map("household_invites")
+}
+
+enum TodoStatus {
+  pending
+  in_progress
+  completed
+}
+
+enum TodoPriority {
+  low
+  medium
+  high
+}
+
+model Todo {
+  id                String       @id @default(uuid()) @db.Uuid
+  household_id      String       @db.Uuid
+  title             String
+  description       String?
+  status            TodoStatus   @default(pending)
+  priority          TodoPriority @default(medium)
+  due_date          DateTime?
+  assigned_to_id    String?      @db.Uuid
+  created_by        String       @db.Uuid
+  recurring_pattern String?
+  recurring_until   DateTime?
+  parent_todo_id    String?      @db.Uuid
+  completed_at      DateTime?    @db.Timestamptz
+  created_at        DateTime     @default(now()) @db.Timestamptz
+  updated_at        DateTime     @default(now()) @updatedAt @db.Timestamptz
+
+  // Relations
+  household    Household @relation(fields: [household_id], references: [id], onDelete: Cascade)
+  assigned_to  User?     @relation("TodoAssignee", fields: [assigned_to_id], references: [id], onDelete: SetNull)
+  creator      User      @relation("TodoCreator", fields: [created_by], references: [id])
+  parent_todo  Todo?     @relation("TodoRecurrence", fields: [parent_todo_id], references: [id], onDelete: SetNull)
+  child_todos  Todo[]    @relation("TodoRecurrence")
+
+  @@map("todos")
+}
+
+enum ExpenseCategory {
+  groceries
+  utilities
+  rent
+  internet
+  cleaning
+  maintenance
+  entertainment
+  food
+  transportation
+  other
+}
+
+enum SplitType {
+  equal
+  custom
+  percentage
+}
+
+enum PaymentMethod {
+  cash
+  card
+  bank_transfer
+  digital_wallet
+  other
+}
+
+model Expense {
+  id             String          @id @default(uuid()) @db.Uuid
+  household_id   String          @db.Uuid
+  created_by     String          @db.Uuid
+  paid_by        String?         @db.Uuid
+  amount         Decimal         @db.Decimal(10, 2)
+  description    String
+  category       ExpenseCategory @default(other)
+  payment_method PaymentMethod   @default(cash)
+  date           DateTime        @default(now()) @db.Timestamptz
+  split_type     SplitType       @default(equal)
+  is_personal    Boolean         @default(false)
+  is_settled     Boolean         @default(false)
+  created_at     DateTime        @default(now()) @db.Timestamptz
+  updated_at     DateTime        @default(now()) @updatedAt @db.Timestamptz
+
+  // Relations
+  household    Household      @relation(fields: [household_id], references: [id], onDelete: Cascade)
+  creator      User           @relation("ExpenseCreator", fields: [created_by], references: [id])
+  paid_by_user User?          @relation("ExpensePayer", fields: [paid_by], references: [id])
+  splits       ExpenseSplit[]
+
+  @@map("expenses")
+}
+
+model ExpenseSplit {
+  id          String    @id @default(uuid()) @db.Uuid
+  expense_id  String    @db.Uuid
+  user_id     String    @db.Uuid
+  amount_owed Decimal   @db.Decimal(10, 2)
+  is_settled  Boolean   @default(false)
+  settled_at  DateTime? @db.Timestamptz
+  created_at  DateTime  @default(now()) @db.Timestamptz
+
+  // Relations
+  expense Expense @relation(fields: [expense_id], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [user_id], references: [id])
+
+  @@map("expense_splits")
+}
+
+enum ShoppingListStatus {
+  active
+  archived
+}
+
+model ShoppingList {
+  id           String             @id @default(uuid()) @db.Uuid
+  household_id String             @db.Uuid
+  name         String
+  description  String?
+  status       ShoppingListStatus @default(active)
+  created_by   String             @db.Uuid
+  created_at   DateTime           @default(now()) @db.Timestamptz
+  updated_at   DateTime           @default(now()) @updatedAt @db.Timestamptz
+
+  // Relations
+  household Household           @relation(fields: [household_id], references: [id], onDelete: Cascade)
+  creator   User                @relation("ShoppingListCreator", fields: [created_by], references: [id])
+  items     ShoppingListItem[]
+
+  @@map("shopping_lists")
+}
+
+model ShoppingListItem {
+  id                  String    @id @default(uuid()) @db.Uuid
+  shopping_list_id    String    @db.Uuid
+  name                String
+  quantity            Float     @default(1.0)
+  unit                String?
+  category            String?
+  is_purchased        Boolean   @default(false)
+  assigned_to_id      String?   @db.Uuid
+  price               Decimal?  @db.Decimal(10, 2)
+  notes               String?
+  is_recurring        Boolean   @default(false)
+  recurring_pattern   String?
+  recurring_until     DateTime?
+  last_recurring_date DateTime?
+  checked_off_by      String?   @db.Uuid
+  checked_off_at      DateTime? @db.Timestamptz
+  position            Int       @default(0)
+  created_by          String    @db.Uuid
+  created_at          DateTime  @default(now()) @db.Timestamptz
+  updated_at          DateTime  @default(now()) @updatedAt @db.Timestamptz
+
+  // Relations
+  shopping_list     ShoppingList @relation(fields: [shopping_list_id], references: [id], onDelete: Cascade)
+  assigned_to       User?        @relation("ItemAssignee", fields: [assigned_to_id], references: [id], onDelete: SetNull)
+  checked_off_user  User?        @relation("ItemCheckedOff", fields: [checked_off_by], references: [id], onDelete: SetNull)
+  creator           User         @relation("ItemCreator", fields: [created_by], references: [id])
+
+  @@map("shopping_list_items")
+}
+
+model ItemCategory {
+  id           String    @id @default(uuid()) @db.Uuid
+  name         String
+  icon         String?
+  color        String?
+  household_id String?   @db.Uuid
+  created_at   DateTime  @default(now()) @db.Timestamptz
+
+  // Relations
+  household Household? @relation(fields: [household_id], references: [id], onDelete: Cascade)
+
+  @@unique([name, household_id], name: "uq_category_name_household")
+  @@map("item_categories")
+}

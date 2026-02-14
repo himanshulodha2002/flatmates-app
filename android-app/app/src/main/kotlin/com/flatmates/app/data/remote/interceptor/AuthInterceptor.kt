@@ -15,7 +15,8 @@ class AuthInterceptor @Inject constructor(
         
         // Skip auth for login/refresh endpoints
         if (originalRequest.url.encodedPath.contains("/auth/google") ||
-            originalRequest.url.encodedPath.contains("/auth/refresh")) {
+            originalRequest.url.encodedPath.contains("/auth/refresh") ||
+            originalRequest.url.encodedPath.contains("/health")) {
             return chain.proceed(originalRequest)
         }
         
