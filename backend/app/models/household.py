@@ -81,7 +81,7 @@ class HouseholdInvite(Base):
 
     id = Column(GUID(), primary_key=True, default=uuid.uuid4, index=True)
     household_id = Column(GUID(), ForeignKey("households.id"), nullable=False)
-    email = Column(String, nullable=False)
+    email = Column(String, nullable=True)  # Optional for public invites
     token = Column(String, unique=True, nullable=False, index=True)
     status = Column(SQLEnum(InviteStatus), nullable=False, default=InviteStatus.PENDING)
     expires_at = Column(DateTime(timezone=True), nullable=False)
