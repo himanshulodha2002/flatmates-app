@@ -222,29 +222,27 @@ db-shell: ## Open PostgreSQL shell
 # Infrastructure Commands
 # =============================================================================
 
-tf-init: ## Initialize Terraform
+tf-init: ## Initialize Terraform (Azure Container Apps)
 	@echo "$(BLUE)Initializing Terraform...$(NC)"
-	cd infrastructure/terraform && terraform init
+	cd infrastructure/terraform-azure && terraform init
 
-tf-plan: ## Plan Terraform changes
+tf-plan: ## Plan Terraform changes (Azure Container Apps)
 	@echo "$(BLUE)Planning infrastructure changes...$(NC)"
-	cd infrastructure/terraform && terraform plan
+	cd infrastructure/terraform-azure && terraform plan
 
-tf-apply: ## Apply Terraform changes
+tf-apply: ## Apply Terraform changes (Azure Container Apps)
 	@echo "$(BLUE)Applying infrastructure changes...$(NC)"
-	cd infrastructure/terraform && terraform apply
+	cd infrastructure/terraform-azure && terraform apply
 
-tf-destroy: ## Destroy Terraform infrastructure
+tf-destroy: ## Destroy Terraform infrastructure (Azure Container Apps)
 	@echo "$(RED)Destroying infrastructure...$(NC)"
-	cd infrastructure/terraform && terraform destroy
+	cd infrastructure/terraform-azure && terraform destroy
 
-infra-dev: tf-init ## Deploy development infrastructure
-	cd infrastructure/terraform && terraform workspace select dev || terraform workspace new dev
-	cd infrastructure/terraform && terraform apply -var-file=terraform.tfvars.example
+infra-dev: tf-init ## Deploy development infrastructure (Azure)
+	cd infrastructure/terraform-azure && terraform apply -var-file=terraform.tfvars
 
-infra-prod: tf-init ## Deploy production infrastructure
-	cd infrastructure/terraform && terraform workspace select production || terraform workspace new production
-	cd infrastructure/terraform && terraform apply -var-file=environments/production.tfvars
+infra-prod: tf-init ## Deploy production infrastructure (Azure)
+	cd infrastructure/terraform-azure && terraform apply -var-file=terraform.tfvars
 
 # =============================================================================
 # Utility Commands
