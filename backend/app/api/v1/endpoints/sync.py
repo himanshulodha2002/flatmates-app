@@ -10,7 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db, get_current_user
+from app.api.deps import get_db, get_current_user, verify_household_membership
 from app.models.user import User
 from app.models.household import HouseholdMember
 from app.models.todo import Todo
@@ -28,28 +28,6 @@ from app.schemas.sync import (
 )
 
 router = APIRouter()
-
-
-def verify_household_membership(
-    household_id: UUID,
-    current_user: User,
-    db: Session,
-) -> HouseholdMember:
-    """Verify user is a member of the household."""
-    member = (
-        db.query(HouseholdMember)
-        .filter(
-            HouseholdMember.household_id == household_id,
-            HouseholdMember.user_id == current_user.id
-        )
-        .first()
-    )
-    if not member:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You are not a member of this household"
-        )
-    return member
 
 
 def datetime_to_timestamp(dt: datetime) -> int:

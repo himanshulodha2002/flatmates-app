@@ -19,18 +19,13 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.config import settings
 from app.core.database import get_db, get_db_resilient
-from app.core.logging import setup_logging, get_logger, log_context, clear_log_context
-from app.core.metrics import (
-    get_metrics,
-    initialize_metrics,
-    HTTP_REQUESTS_TOTAL,
-    HTTP_REQUEST_DURATION_SECONDS,
-    HTTP_REQUESTS_IN_PROGRESS,
-)
+from app.core.logging import setup_logging, get_logger
+from app.core.metrics import get_metrics, initialize_metrics
+from app.core.middleware import RequestLoggingMiddleware
 from app.core.sentry import init_sentry, capture_exception
 from app.api.v1.api import api_router
 
-# Initialize Sentry FIRST (before anything else)
+# Initialize Sentry FIRST
 sentry_enabled = init_sentry()
 
 # Setup structured logging
@@ -86,72 +81,7 @@ app = FastAPI(
 # Middleware
 # =============================================================================
 
-@app.middleware("http")
-async def logging_middleware(request: Request, call_next):
-    """Add request logging and metrics."""
-    # Generate request ID
-    request_id = str(uuid.uuid4())[:8]
-    
-    # Add context for all logs in this request
-    log_context(
-        request_id=request_id,
-        method=request.method,
-        path=request.url.path,
-    )
-    
-    # Get endpoint for metrics (normalize path parameters)
-    endpoint = request.url.path
-    method = request.method
-    
-    # Track request in progress
-    HTTP_REQUESTS_IN_PROGRESS.labels(method=method, endpoint=endpoint).inc()
-    
-    start_time = time.perf_counter()
-    
-    try:
-        response = await call_next(request)
-        
-        # Calculate duration
-        duration = time.perf_counter() - start_time
-        
-        # Record metrics
-        HTTP_REQUESTS_TOTAL.labels(
-            method=method,
-            endpoint=endpoint,
-            status_code=response.status_code
-        ).inc()
-        
-        HTTP_REQUEST_DURATION_SECONDS.labels(
-            method=method,
-            endpoint=endpoint
-        ).observe(duration)
-        
-        # Log request (skip health checks in production)
-        if not (settings.is_production and endpoint == "/health"):
-            logger.info(
-                "Request completed",
-                status_code=response.status_code,
-                duration_ms=round(duration * 1000, 2),
-            )
-        
-        # Add request ID to response headers
-        response.headers["X-Request-ID"] = request_id
-        
-        return response
-        
-    except Exception as e:
-        duration = time.perf_counter() - start_time
-        logger.error(
-            "Request failed",
-            error=str(e),
-            duration_ms=round(duration * 1000, 2),
-        )
-        raise
-        
-    finally:
-        HTTP_REQUESTS_IN_PROGRESS.labels(method=method, endpoint=endpoint).dec()
-        clear_log_context()
-
+app.add_middleware(RequestLoggingMiddleware)
 
 # Configure CORS
 app.add_middleware(

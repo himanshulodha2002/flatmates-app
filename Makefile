@@ -64,10 +64,10 @@ install-backend: ## Install backend dependencies
 		uv pip install -e ".[dev]"
 	@echo "$(GREEN)✓ Backend dependencies installed$(NC)"
 
-install-mobile: ## Install mobile dependencies
-	@echo "$(BLUE)Installing mobile dependencies...$(NC)"
-	cd mobile && npm install
-	@echo "$(GREEN)✓ Mobile dependencies installed$(NC)"
+install-mobile: ## Install web-app dependencies
+	@echo "$(BLUE)Installing web-app dependencies...$(NC)"
+	cd web-app && npm install
+	@echo "$(GREEN)✓ Web-app dependencies installed$(NC)"
 
 # =============================================================================
 # Development Commands
@@ -89,15 +89,15 @@ backend-run: ## Start backend in production mode locally
 	cd backend && . .venv/bin/activate && \
 		uvicorn app.main:app --host 0.0.0.0 --port 8000
 
-mobile-dev: ## Start mobile Expo development server
-	@echo "$(BLUE)Starting mobile development server...$(NC)"
-	cd mobile && npm start
+mobile-dev: ## Start web-app development server
+	@echo "$(BLUE)Starting web-app development server...$(NC)"
+	cd web-app && npm run dev
 
-mobile-ios: ## Start mobile on iOS simulator
-	cd mobile && npm run ios
+mobile-ios: ## Start mobile on iOS simulator (deprecated)
+	@echo "$(YELLOW)iOS simulator not available for web-app$(NC)"
 
-mobile-android: ## Start mobile on Android emulator
-	cd mobile && npm run android
+mobile-android: ## Start mobile on Android emulator (deprecated)
+	@echo "$(YELLOW)Android emulator not available for web-app$(NC)"
 
 # =============================================================================
 # Testing Commands
@@ -118,12 +118,12 @@ backend-test-docker: ## Run backend tests in Docker
 	@echo "$(BLUE)Running backend tests in Docker...$(NC)"
 	cd backend && docker compose --profile test up --build --abort-on-container-exit
 
-mobile-test: ## Run mobile tests
-	@echo "$(BLUE)Running mobile tests...$(NC)"
-	cd mobile && npm test
+mobile-test: ## Run web-app lint
+	@echo "$(BLUE)Running web-app lint...$(NC)"
+	cd web-app && npm run lint
 
-mobile-test-coverage: ## Run mobile tests with coverage
-	cd mobile && npm run test:coverage
+mobile-test-coverage: ## Run web-app build check
+	cd web-app && npm run build
 
 # =============================================================================
 # Linting & Formatting
@@ -143,12 +143,12 @@ backend-lint-fix: ## Fix backend linting issues
 		ruff check --fix app && \
 		ruff format app
 
-mobile-lint: ## Run mobile linting
-	@echo "$(BLUE)Linting mobile...$(NC)"
-	cd mobile && npm run lint
+mobile-lint: ## Run web-app linting
+	@echo "$(BLUE)Linting web-app...$(NC)"
+	cd web-app && npm run lint
 
-mobile-lint-fix: ## Fix mobile linting issues
-	cd mobile && npm run lint:fix
+mobile-lint-fix: ## Fix web-app linting issues
+	cd web-app && npm run lint -- --fix
 
 format: backend-lint-fix mobile-lint-fix ## Format all code
 
@@ -258,7 +258,7 @@ clean: ## Clean up generated files
 	find . -type d -name "htmlcov" -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete 2>/dev/null || true
 	find . -type f -name ".coverage" -delete 2>/dev/null || true
-	cd mobile && rm -rf node_modules/.cache 2>/dev/null || true
+	cd web-app && rm -rf node_modules/.cache .next 2>/dev/null || true
 	@echo "$(GREEN)✓ Cleanup complete$(NC)"
 
 env-check: ## Check environment configuration
@@ -267,8 +267,8 @@ env-check: ## Check environment configuration
 	@echo "Backend .env:"
 	@test -f backend/.env && echo "  $(GREEN)✓ Found$(NC)" || echo "  $(RED)✗ Missing (copy from .env.example)$(NC)"
 	@echo ""
-	@echo "Mobile .env:"
-	@test -f mobile/.env.development && echo "  $(GREEN)✓ Found$(NC)" || echo "  $(RED)✗ Missing (copy from .env.example)$(NC)"
+	@echo "Web App .env:" 
+	@test -f web-app/.env.local && echo "  $(GREEN)✓ Found$(NC)" || echo "  $(RED)✗ Missing$(NC)"
 	@echo ""
 	@echo "Docker:"
 	@command -v docker >/dev/null 2>&1 && echo "  $(GREEN)✓ Docker installed$(NC)" || echo "  $(RED)✗ Docker not installed$(NC)"

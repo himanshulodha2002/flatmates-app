@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_
 
-from app.api.deps import get_current_user, get_db
+from app.api.deps import get_current_user, get_db, verify_household_membership
 from app.models.user import User
 from app.models.household import HouseholdMember
 from app.models.todo import Todo, TodoStatus
@@ -24,72 +24,12 @@ from app.core.database import utc_now
 router = APIRouter()
 
 
-def verify_household_access(
-    household_id: uuid.UUID,
-    current_user: User,
-    db: Session,
-) -> HouseholdMember:
-    """
-    Verify user has access to the household.
-
-    Args:
-        household_id: ID of the household
-        current_user: Current authenticated user
-        db: Database session
-
-    Returns:
-        HouseholdMember object if user is a member
-
-    Raises:
-        HTTPException: If user is not a member
-    """
-    member = (
-        db.query(HouseholdMember)
-        .filter(
-            HouseholdMember.household_id == household_id,
-            HouseholdMember.user_id == current_user.id
-        )
-        .first()
-    )
-
-    if not member:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You are not a member of this household"
-        )
-
-    return member
-
-
-def verify_todo_access(
-    todo_id: uuid.UUID,
-    current_user: User,
-    db: Session,
-) -> Todo:
-    """
-    Verify user has access to the todo.
-
-    Args:
-        todo_id: ID of the todo
-        current_user: Current authenticated user
-        db: Database session
-
-    Returns:
-        Todo object if user has access
-
-    Raises:
-        HTTPException: If todo not found or user doesn't have access
-    """
+def verify_todo_access(todo_id: uuid.UUID, current_user: User, db: Session) -> Todo:
+    """Verify user has access to the todo via household membership."""
     todo = db.query(Todo).filter(Todo.id == todo_id).first()
     if not todo:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Todo not found"
-        )
-
-    # Verify user is a member of the household
-    verify_household_access(todo.household_id, current_user, db)
-
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Todo not found")
+    verify_household_membership(todo.household_id, current_user, db)
     return todo
 
 
@@ -103,8 +43,7 @@ def create_todo(
     Create a new todo.
     User must be a member of the household.
     """
-    # Verify household access
-    verify_household_access(todo_data.household_id, current_user, db)
+    verify_household_membership(todo_data.household_id, current_user, db)
 
     # Verify assigned user is a member if assigned_to_id is provided
     if todo_data.assigned_to_id:
@@ -153,8 +92,7 @@ def list_todos(
     """
     List todos for a household with optional filters.
     """
-    # Verify household access
-    verify_household_access(household_id, current_user, db)
+    verify_household_membership(household_id, current_user, db)
 
     # Build query
     query = db.query(Todo).filter(Todo.household_id == household_id)
@@ -332,8 +270,7 @@ def get_todo_stats(
     """
     Get todo statistics for a household.
     """
-    # Verify household access
-    verify_household_access(household_id, current_user, db)
+    verify_household_membership(household_id, current_user, db)
 
     # Get counts by status
     pending_count = db.query(Todo).filter(
