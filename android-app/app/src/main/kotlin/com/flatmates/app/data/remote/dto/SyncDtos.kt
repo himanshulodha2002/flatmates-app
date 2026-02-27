@@ -192,9 +192,7 @@ data class InviteCreateRequest(
 )
 
 @Serializable
-data class CreatePublicInviteRequest(
-    // No fields needed - just triggers public invite creation on backend
-)
+class CreatePublicInviteRequest
 
 @Serializable
 data class InviteDto(
