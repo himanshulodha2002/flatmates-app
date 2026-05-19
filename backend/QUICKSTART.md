@@ -127,7 +127,6 @@ uvicorn app.main:app --reload --port 8001
 ## Need Help?
 
 - Check the full [README.md](README.md) for detailed documentation
-- Review the [VALIDATION.md](VALIDATION.md) for verification steps
 - Check [FastAPI documentation](https://fastapi.tiangolo.com/)
 
 ---

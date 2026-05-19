@@ -4,11 +4,13 @@ Pydantic schemas for authentication.
 
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel, UUID4, ConfigDict
 
 
 class UserResponse(BaseModel):
     """Schema for user response."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: UUID4
     email: str
@@ -19,16 +21,28 @@ class UserResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
-
 
 class TokenResponse(BaseModel):
     """Schema for token response."""
 
     access_token: str
+    refresh_token: Optional[str] = None
     token_type: str = "bearer"
+    expires_in: int = 604800  # 7 days in seconds
     user: UserResponse
+
+
+class RefreshTokenRequest(BaseModel):
+    """Schema for refresh token request."""
+    
+    refresh_token: str
+
+
+class RefreshTokenResponse(BaseModel):
+    """Schema for refresh token response."""
+    
+    access_token: str
+    expires_in: int = 604800  # 7 days in seconds
 
 
 class GoogleTokenRequest(BaseModel):

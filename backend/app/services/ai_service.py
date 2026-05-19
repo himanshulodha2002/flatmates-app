@@ -11,6 +11,10 @@ import base64
 
 from app.core.config import settings
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class AIProvider(ABC):
     """Abstract base class for AI providers."""
@@ -57,7 +61,7 @@ class GeminiProvider(AIProvider):
                 genai.configure(api_key=settings.GEMINI_API_KEY)
                 self.model = genai.GenerativeModel('gemini-1.5-flash')
             except Exception as e:
-                print(f"Failed to initialize Gemini: {e}")
+                logger.warning("Failed to initialize Gemini: %s", e)
 
     def is_available(self) -> bool:
         """Check if Gemini AI is configured and available."""
@@ -105,7 +109,7 @@ Respond ONLY with the JSON object, no additional text."""
 
             return result
         except Exception as e:
-            print(f"Error in Gemini categorization: {str(e)}")
+            logger.error("Error in Gemini categorization: %s", e)
             return self._get_default_categorization(str(e))
 
     async def extract_receipt_data(
@@ -153,7 +157,7 @@ Respond ONLY with the JSON object, no additional text."""
             result = json.loads(result_text)
             return result
         except Exception as e:
-            print(f"Error in Gemini OCR: {str(e)}")
+            logger.error("Error in Gemini OCR: %s", e)
             return {"success": False, "error": f"Failed to process receipt: {str(e)}", "expenses": []}
 
     async def suggest_tasks(
@@ -218,7 +222,7 @@ Respond ONLY with the JSON array, no additional text."""
 
             return suggestions[:5]
         except Exception as e:
-            print(f"Error in Gemini task suggestions: {str(e)}")
+            logger.error("Error in Gemini task suggestions: %s", e)
             return []
 
     @staticmethod
@@ -259,7 +263,7 @@ class OpenAIProvider(AIProvider):
                 )
                 self.model = settings.OPENAI_MODEL
             except Exception as e:
-                print(f"Failed to initialize OpenAI: {e}")
+                logger.warning("Failed to initialize OpenAI: %s", e)
 
     def is_available(self) -> bool:
         """Check if OpenAI is configured and available."""
@@ -315,7 +319,7 @@ Respond ONLY with the JSON object, no additional text."""
 
             return result
         except Exception as e:
-            print(f"Error in OpenAI categorization: {str(e)}")
+            logger.error("Error in OpenAI categorization: %s", e)
             return self._get_default_categorization(str(e))
 
     async def extract_receipt_data(
@@ -387,7 +391,7 @@ Respond ONLY with the JSON object, no additional text."""
             result = json.loads(result_text)
             return result
         except Exception as e:
-            print(f"Error in OpenAI OCR: {str(e)}")
+            logger.error("Error in OpenAI OCR: %s", e)
             return {"success": False, "error": f"Failed to process receipt: {str(e)}", "expenses": []}
 
     async def suggest_tasks(
@@ -470,7 +474,7 @@ Respond ONLY with the JSON array, no additional text."""
 
             return suggestions[:5]
         except Exception as e:
-            print(f"Error in OpenAI task suggestions: {str(e)}")
+            logger.error("Error in OpenAI task suggestions: %s", e)
             return []
 
     @staticmethod
@@ -500,29 +504,29 @@ class AIService:
 
         if provider_name == "openai":
             if self.openai.is_available():
-                print("Using OpenAI provider")
+                logger.info("Using OpenAI provider")
                 return self.openai
             elif self.gemini.is_available():
-                print("OpenAI not available, falling back to Gemini")
+                logger.info("OpenAI not available, falling back to Gemini")
                 return self.gemini
         elif provider_name == "gemini":
             if self.gemini.is_available():
-                print("Using Gemini provider")
+                logger.info("Using Gemini provider")
                 return self.gemini
             elif self.openai.is_available():
-                print("Gemini not available, falling back to OpenAI")
+                logger.info("Gemini not available, falling back to OpenAI")
                 return self.openai
         elif provider_name == "auto":
             # Try OpenAI first, then Gemini
             if self.openai.is_available():
-                print("Using OpenAI provider (auto-selected)")
+                logger.info("Using OpenAI provider (auto-selected)")
                 return self.openai
             elif self.gemini.is_available():
-                print("Using Gemini provider (auto-selected)")
+                logger.info("Using Gemini provider (auto-selected)")
                 return self.gemini
 
         # Fallback to Gemini as default
-        print("No AI provider available, using default (non-functional)")
+        logger.warning("No AI provider available, using default (non-functional)")
         return self.gemini
 
     def is_available(self) -> bool:
