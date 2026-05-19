@@ -4,12 +4,12 @@ Household management endpoints.
 
 import secrets
 import uuid
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, get_db
+from app.api.deps import get_current_user, get_db, verify_household_membership, verify_owner_permission
 from app.models.user import User
 from app.models.household import (
     Household,
@@ -23,89 +23,15 @@ from app.schemas.household import (
     HouseholdResponse,
     HouseholdWithMembers,
     InviteCreate,
+    CreatePublicInviteRequest,
     InviteResponse,
     JoinHouseholdRequest,
     MemberRoleUpdate,
     MemberWithUser,
 )
+from app.core.database import utc_now
 
 router = APIRouter()
-
-
-def get_current_household(
-    household_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> Household:
-    """
-    Dependency to get current household and verify user membership.
-
-    Args:
-        household_id: ID of the household
-        current_user: Current authenticated user
-        db: Database session
-
-    Returns:
-        Household object if user is a member
-
-    Raises:
-        HTTPException: If household not found or user not a member
-    """
-    household = db.query(Household).filter(Household.id == household_id).first()
-    if not household:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Household not found")
-
-    # Check if user is a member
-    member = (
-        db.query(HouseholdMember)
-        .filter(
-            HouseholdMember.household_id == household_id, HouseholdMember.user_id == current_user.id
-        )
-        .first()
-    )
-
-    if not member:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="You are not a member of this household"
-        )
-
-    return household
-
-
-def check_owner_permission(
-    household_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> HouseholdMember:
-    """
-    Dependency to check if user is owner of the household.
-
-    Args:
-        household_id: ID of the household
-        current_user: Current authenticated user
-        db: Database session
-
-    Returns:
-        HouseholdMember object if user is owner
-
-    Raises:
-        HTTPException: If user is not owner
-    """
-    member = (
-        db.query(HouseholdMember)
-        .filter(
-            HouseholdMember.household_id == household_id, HouseholdMember.user_id == current_user.id
-        )
-        .first()
-    )
-
-    if not member or member.role != MemberRole.OWNER:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only household owners can perform this action",
-        )
-
-    return member
 
 
 @router.post("/", response_model=HouseholdResponse, status_code=status.HTTP_201_CREATED)
@@ -185,12 +111,16 @@ def list_my_households(
 
 @router.get("/{household_id}", response_model=HouseholdWithMembers)
 def get_household_details(
-    household: Household = Depends(get_current_household), db: Session = Depends(get_db)
+    household_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    """
-    Get household details with members list.
-    """
-    # Get all members with user details
+    """Get household details with members list."""
+    verify_household_membership(household_id, current_user, db)
+    household = db.query(Household).filter(Household.id == household_id).first()
+    if not household:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Household not found")
+
     members = db.query(HouseholdMember).filter(HouseholdMember.household_id == household.id).all()
 
     members_with_users = []
@@ -222,18 +152,15 @@ def list_invites(
     household_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-    _: Household = Depends(get_current_household),
 ):
-    """
-    List all pending invites for a household.
-    Any member can view invites.
-    """
+    """List all pending invites for a household."""
+    verify_household_membership(household_id, current_user, db)
     invites = (
         db.query(HouseholdInvite)
         .filter(
             HouseholdInvite.household_id == household_id,
             HouseholdInvite.status == InviteStatus.PENDING,
-            HouseholdInvite.expires_at > datetime.utcnow(),
+            HouseholdInvite.expires_at > utc_now(),
         )
         .all()
     )
@@ -258,12 +185,9 @@ def create_invite(
     invite_data: InviteCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-    _: HouseholdMember = Depends(check_owner_permission),
 ):
-    """
-    Create an invite to the household.
-    Only owners can create invites.
-    """
+    """Create an invite to the household. Only owners can create invites."""
+    verify_owner_permission(household_id, current_user, db)
     # Check if user with email already is a member
     existing_user = db.query(User).filter(User.email == invite_data.email).first()
     if existing_user:
@@ -288,7 +212,7 @@ def create_invite(
             HouseholdInvite.household_id == household_id,
             HouseholdInvite.email == invite_data.email,
             HouseholdInvite.status == InviteStatus.PENDING,
-            HouseholdInvite.expires_at > datetime.utcnow(),
+            HouseholdInvite.expires_at > utc_now(),
         )
         .first()
     )
@@ -308,7 +232,43 @@ def create_invite(
         email=invite_data.email,
         token=token,
         status=InviteStatus.PENDING,
-        expires_at=datetime.utcnow() + timedelta(days=7),
+        expires_at=utc_now() + timedelta(days=7),
+        created_by=current_user.id,
+    )
+    db.add(invite)
+    db.commit()
+    db.refresh(invite)
+
+    return InviteResponse(
+        id=invite.id,
+        household_id=invite.household_id,
+        email=invite.email,
+        token=invite.token,
+        status=invite.status,
+        expires_at=invite.expires_at,
+        created_at=invite.created_at,
+    )
+
+
+@router.post("/{household_id}/invite/public", response_model=InviteResponse)
+def create_public_invite(
+    household_id: uuid.UUID,
+    _invite_data: CreatePublicInviteRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Create a public invite code for the household. Only owners can create invites."""
+    verify_owner_permission(household_id, current_user, db)
+    # Generate unique token
+    token = secrets.token_urlsafe(32)
+
+    # Create invite (without email)
+    invite = HouseholdInvite(
+        household_id=household_id,
+        email=None,  # Public invite has no specific email
+        token=token,
+        status=InviteStatus.PENDING,
+        expires_at=utc_now() + timedelta(days=7),
         created_by=current_user.id,
     )
     db.add(invite)
@@ -332,12 +292,9 @@ def cancel_invite(
     invite_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-    _: HouseholdMember = Depends(check_owner_permission),
 ):
-    """
-    Cancel a pending invite.
-    Only owners can cancel invites.
-    """
+    """Cancel a pending invite. Only owners can cancel invites."""
+    verify_owner_permission(household_id, current_user, db)
     invite = (
         db.query(HouseholdInvite)
         .filter(
@@ -398,13 +355,13 @@ def join_household(
         )
 
     # Check if expired
-    if invite.status == InviteStatus.EXPIRED or invite.expires_at < datetime.utcnow():
+    if invite.status == InviteStatus.EXPIRED or invite.expires_at < utc_now():
         invite.status = InviteStatus.EXPIRED
         db.commit()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invite has expired")
 
-    # Check if email matches (optional - you may want to remove this check)
-    if invite.email != current_user.email:
+    # Check if email matches (only for email-specific invites)
+    if invite.email is not None and invite.email != current_user.email:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="This invite is for a different email address",
@@ -442,12 +399,9 @@ def update_member_role(
     role_data: MemberRoleUpdate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-    _: HouseholdMember = Depends(check_owner_permission),
 ):
-    """
-    Update a member's role.
-    Only owners can update roles.
-    """
+    """Update a member's role. Only owners can update roles."""
+    verify_owner_permission(household_id, current_user, db)
     # Get member
     member = (
         db.query(HouseholdMember)
@@ -498,12 +452,9 @@ def remove_member(
     member_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-    _: HouseholdMember = Depends(check_owner_permission),
 ):
-    """
-    Remove a member from the household.
-    Only owners can remove members.
-    """
+    """Remove a member from the household. Only owners can remove members."""
+    verify_owner_permission(household_id, current_user, db)
     # Get member
     member = (
         db.query(HouseholdMember)

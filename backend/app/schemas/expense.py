@@ -6,7 +6,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional
 from uuid import UUID
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from app.models.expense import ExpenseCategory, SplitType, PaymentMethod
 
@@ -29,6 +29,8 @@ class ExpenseSplitUpdate(BaseModel):
 class ExpenseSplitResponse(BaseModel):
     """Schema for expense split response."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     expense_id: UUID
     user_id: UUID
@@ -39,9 +41,6 @@ class ExpenseSplitResponse(BaseModel):
     # User details (populated from join)
     user_email: Optional[str] = None
     user_name: Optional[str] = None
-
-    class Config:
-        from_attributes = True
 
 
 # Expense schemas
@@ -74,6 +73,8 @@ class ExpenseUpdate(BaseModel):
 class ExpenseResponse(BaseModel):
     """Schema for expense response."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     household_id: UUID
     created_by: UUID
@@ -90,12 +91,11 @@ class ExpenseResponse(BaseModel):
     creator_name: Optional[str] = None
     creator_email: Optional[str] = None
 
-    class Config:
-        from_attributes = True
-
 
 class ExpenseWithSplits(BaseModel):
     """Schema for expense with splits details."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: UUID
     household_id: UUID
@@ -114,9 +114,6 @@ class ExpenseWithSplits(BaseModel):
     creator_email: Optional[str] = None
     # Splits
     splits: List[ExpenseSplitResponse]
-
-    class Config:
-        from_attributes = True
 
 
 # Settlement schemas
@@ -182,3 +179,20 @@ class PersonalExpenseAnalytics(BaseModel):
     expense_count: int
     category_breakdown: dict[ExpenseCategory, Decimal]
     monthly_stats: List[MonthlyExpenseStats]
+
+
+# AI Suggestion schemas
+class TaskSuggestion(BaseModel):
+    """Schema for a single task suggestion from AI."""
+
+    title: str
+    description: str
+    priority: str = Field(..., pattern="^(low|medium|high)$")
+    category: str = Field(..., pattern="^(chores|financial|shopping|maintenance|other)$")
+    reasoning: str
+
+
+class TaskSuggestionsResponse(BaseModel):
+    """Schema for task suggestions response."""
+
+    suggestions: List[TaskSuggestion]

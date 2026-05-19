@@ -113,7 +113,8 @@ def test_get_current_user_endpoint(client, db_session):
 def test_get_current_user_without_token(client):
     """Test getting current user without token."""
     response = client.get("/api/v1/auth/me")
-    assert response.status_code == 403
+    # 401 Unauthorized is returned when no token is provided (403 is for valid token but insufficient permissions)
+    assert response.status_code == 401
 
 
 @pytest.mark.integration

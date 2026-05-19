@@ -3,14 +3,13 @@ Shopping list management endpoints.
 """
 
 import uuid
-from datetime import datetime
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from decimal import Decimal
 
-from app.api.deps import get_current_user, get_db
+from app.api.deps import get_current_user, get_db, verify_household_membership
 from app.models.user import User
 from app.models.household import HouseholdMember
 from app.models.shopping import ShoppingList, ShoppingListItem, ItemCategory, ShoppingListStatus
@@ -28,76 +27,19 @@ from app.schemas.shopping import (
     ItemCategoryResponse,
     ShoppingListStats,
 )
+from app.core.database import utc_now
 
 router = APIRouter()
 
 
-def verify_household_access(
-    household_id: uuid.UUID,
-    current_user: User,
-    db: Session,
-) -> HouseholdMember:
-    """
-    Verify user has access to the household.
-
-    Args:
-        household_id: ID of the household
-        current_user: Current authenticated user
-        db: Database session
-
-    Returns:
-        HouseholdMember object if user is a member
-
-    Raises:
-        HTTPException: If user is not a member
-    """
-    member = (
-        db.query(HouseholdMember)
-        .filter(
-            HouseholdMember.household_id == household_id,
-            HouseholdMember.user_id == current_user.id
-        )
-        .first()
-    )
-
-    if not member:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You are not a member of this household"
-        )
-
-    return member
-
-
 def verify_shopping_list_access(
-    shopping_list_id: uuid.UUID,
-    current_user: User,
-    db: Session,
+    shopping_list_id: uuid.UUID, current_user: User, db: Session
 ) -> ShoppingList:
-    """
-    Verify user has access to the shopping list.
-
-    Args:
-        shopping_list_id: ID of the shopping list
-        current_user: Current authenticated user
-        db: Database session
-
-    Returns:
-        ShoppingList object if user has access
-
-    Raises:
-        HTTPException: If shopping list not found or user doesn't have access
-    """
+    """Verify user has access to the shopping list via household membership."""
     shopping_list = db.query(ShoppingList).filter(ShoppingList.id == shopping_list_id).first()
     if not shopping_list:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Shopping list not found"
-        )
-
-    # Verify user is a member of the household
-    verify_household_access(shopping_list.household_id, current_user, db)
-
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shopping list not found")
+    verify_household_membership(shopping_list.household_id, current_user, db)
     return shopping_list
 
 
@@ -113,8 +55,7 @@ def create_shopping_list(
     Create a new shopping list.
     User must be a member of the household.
     """
-    # Verify household access
-    verify_household_access(list_data.household_id, current_user, db)
+    verify_household_membership(list_data.household_id, current_user, db)
 
     # Create shopping list
     shopping_list = ShoppingList(
@@ -141,8 +82,7 @@ def list_shopping_lists(
     """
     List shopping lists for a household with optional filters.
     """
-    # Verify household access
-    verify_household_access(household_id, current_user, db)
+    verify_household_membership(household_id, current_user, db)
 
     # Build query
     query = db.query(ShoppingList).filter(ShoppingList.household_id == household_id)
@@ -158,6 +98,71 @@ def list_shopping_lists(
 
     return shopping_lists
 
+
+# ============ Item Category Endpoints ============
+# NOTE: These must be defined before /{list_id} routes to avoid path conflicts
+
+@router.get("/categories", response_model=List[ItemCategoryResponse])
+def list_item_categories(
+    household_id: Optional[uuid.UUID] = Query(None, description="Household ID for custom categories"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    List all item categories (global + household-specific).
+    """
+    # Get global categories
+    query = db.query(ItemCategory).filter(ItemCategory.household_id.is_(None))
+
+    # Add household-specific categories if household_id provided
+    if household_id:
+        verify_household_membership(household_id, current_user, db)
+        household_query = db.query(ItemCategory).filter(ItemCategory.household_id == household_id)
+        categories = query.all() + household_query.all()
+    else:
+        categories = query.all()
+
+    return categories
+
+
+@router.post("/categories", response_model=ItemCategoryResponse, status_code=status.HTTP_201_CREATED)
+def create_item_category(
+    category_data: ItemCategoryCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Create a custom item category for a household.
+    """
+    if category_data.household_id:
+        verify_household_membership(category_data.household_id, current_user, db)
+
+    # Check if category already exists
+    existing = db.query(ItemCategory).filter(
+        ItemCategory.name == category_data.name,
+        ItemCategory.household_id == category_data.household_id
+    ).first()
+
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Category with this name already exists"
+        )
+
+    category = ItemCategory(
+        name=category_data.name,
+        icon=category_data.icon,
+        color=category_data.color,
+        household_id=category_data.household_id,
+    )
+    db.add(category)
+    db.commit()
+    db.refresh(category)
+
+    return category
+
+
+# ============ Shopping List Detail Endpoints ============
 
 @router.get("/{list_id}", response_model=ShoppingListWithItems)
 def get_shopping_list(
@@ -266,7 +271,7 @@ def update_shopping_list(
     if list_data.status is not None:
         shopping_list.status = list_data.status
 
-    shopping_list.updated_at = datetime.utcnow()
+    shopping_list.updated_at = utc_now()
 
     db.commit()
     db.refresh(shopping_list)
@@ -465,7 +470,7 @@ def update_shopping_list_item(
         item.is_purchased = item_data.is_purchased
         if item_data.is_purchased:
             item.checked_off_by = current_user.id
-            item.checked_off_at = datetime.utcnow()
+            item.checked_off_at = utc_now()
         else:
             item.checked_off_by = None
             item.checked_off_at = None
@@ -484,7 +489,7 @@ def update_shopping_list_item(
     if item_data.position is not None:
         item.position = item_data.position
 
-    item.updated_at = datetime.utcnow()
+    item.updated_at = utc_now()
 
     db.commit()
     db.refresh(item)
@@ -520,12 +525,12 @@ def toggle_item_purchase_status(
     item.is_purchased = purchase_data.is_purchased
     if purchase_data.is_purchased:
         item.checked_off_by = current_user.id
-        item.checked_off_at = datetime.utcnow()
+        item.checked_off_at = utc_now()
     else:
         item.checked_off_by = None
         item.checked_off_at = None
 
-    item.updated_at = datetime.utcnow()
+    item.updated_at = utc_now()
 
     db.commit()
     db.refresh(item)
@@ -560,65 +565,3 @@ def delete_shopping_list_item(
     db.commit()
 
     return None
-
-
-# ============ Item Category Endpoints ============
-
-@router.get("/categories", response_model=List[ItemCategoryResponse])
-def list_item_categories(
-    household_id: Optional[uuid.UUID] = Query(None, description="Household ID for custom categories"),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """
-    List all item categories (global + household-specific).
-    """
-    # Get global categories
-    query = db.query(ItemCategory).filter(ItemCategory.household_id.is_(None))
-
-    # Add household-specific categories if household_id provided
-    if household_id:
-        verify_household_access(household_id, current_user, db)
-        household_query = db.query(ItemCategory).filter(ItemCategory.household_id == household_id)
-        categories = query.all() + household_query.all()
-    else:
-        categories = query.all()
-
-    return categories
-
-
-@router.post("/categories", response_model=ItemCategoryResponse, status_code=status.HTTP_201_CREATED)
-def create_item_category(
-    category_data: ItemCategoryCreate,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """
-    Create a custom item category for a household.
-    """
-    if category_data.household_id:
-        verify_household_access(category_data.household_id, current_user, db)
-
-    # Check if category already exists
-    existing = db.query(ItemCategory).filter(
-        ItemCategory.name == category_data.name,
-        ItemCategory.household_id == category_data.household_id
-    ).first()
-
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Category with this name already exists"
-        )
-
-    category = ItemCategory(
-        name=category_data.name,
-        icon=category_data.icon,
-        color=category_data.color,
-        household_id=category_data.household_id,
-    )
-    db.add(category)
-    db.commit()
-    db.refresh(category)
-
-    return category

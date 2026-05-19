@@ -5,7 +5,7 @@ Pydantic schemas for todo management.
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from app.models.todo import TodoStatus, TodoPriority
 
@@ -54,6 +54,8 @@ class TodoStatusUpdate(BaseModel):
 class TodoResponse(BaseModel):
     """Response schema for todo operations."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     household_id: UUID
     title: str
@@ -70,12 +72,11 @@ class TodoResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
-
 
 class TodoWithDetails(BaseModel):
     """Todo schema with user details."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: UUID
     household_id: UUID
@@ -96,9 +97,6 @@ class TodoWithDetails(BaseModel):
     completed_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class TodoListResponse(BaseModel):
